@@ -1,4 +1,4 @@
-# ChronoDyne Systems, Inc. // ILO-Analyzer-v3
+# ChronoDyne Systems, Inc. // ILO-Analyzer-v3 (WARNING - EXPERIMENTAL PROTOTYPE)
 
 An automated, cloud-isolated information triage engine built to identify and map Engineered Information Laundering Operations (ILOs). This architecture bypasses standard surface-level text classification by looking directly at the thermodynamic footprint of data propagation.
 
