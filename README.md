@@ -15,6 +15,21 @@ The processing pipeline routes unverified narrative strings through a five-phase
 
 ---
 
+## 🚀 Production API & Testing
+
+The backend engine is deployed and running live on Render. 
+
+* **Live API Base URL:** `https://ilo-analyzer.onrender.com`
+* **Interactive Testing Dashboard:** [https://ilo-analyzer.onrender.com/docs](https://ilo-analyzer.onrender.com/docs)
+
+### How to Test via the Dashboard:
+1. Navigate to the `/docs` link above to open the Swagger UI.
+2. Expand the green **POST `/analyze`** endpoint panel.
+3. Click **"Try it out"**.
+4. Input your JSON payload structure into the request body and click **Execute**.
+
+---
+
 ## Academic & Corporate Context
 
 This architecture represents an implementation milestone for **ChronoDyne Systems, Inc.** structural modeling. 
