@@ -23,7 +23,7 @@ This architecture represents an implementation milestone for **ChronoDyne System
 For the underlying mathematical models, thermodynamic derivations, and formal proofs behind the Fractal Information Iteration Hypothesis, please reference the primary repository documentation and peer-reviewed framework:
 
 > **Stewart, M.** *The Fractal Information Iteration Hypothesis*. 
-> [Digital Object Identifier: Figshare Repository Context]
+> [https://doi.org/10.6084/m9.figshare.32307087]
 
 ### Upcoming Presentations
 A live demonstration of this engine's algorithmic translation of Constructal dynamics—specifically focusing on dynamic expert expansion models—will be presented at the **16th Annual Constructal Law Conference** in Paris, France.
