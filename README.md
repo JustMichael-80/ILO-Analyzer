@@ -1,34 +1,40 @@
-# ILO-Analyzer
-Automated Information Laundering Operation Triage powered by the Principle of Persistent Structurization (PPS)
-# ChronoDyne Systems // ILO Analyzer v2.0
+# ChronoDyne Systems // ILO-Analyzer-v3
 
-> A Rigorous Thermodynamic Sieve for Automated Information Laundering Operation Triage.
+An automated, cloud-isolated information triage engine built to identify and map Engineered Information Laundering Operations (ILOs). This architecture bypasses standard surface-level text classification by looking directly at the thermodynamic footprint of data propagation.
 
-Traditional content analysis evaluates narrative validity through centralized, institutional authority. The **ILO Analyzer** completely upends this paradigm by treating information tracking as a fluid dynamics and thermodynamic optimization problem. 
+## Theoretical Framework: The Principle of Persistent Structurization (PPS)
 
-Powered by the **Principle of Persistent Structurization (PPS)** and optimized under the **Scale-Timescale Optimization Corollary (STOC)**, this framework evaluates narratives entirely based on their physical and structural mechanics across expanding operational scales.
+Standard fact-checking utilities fail because they treat disinformation as a static content problem. The ILO Analyzer treats information as an open, non-equilibrium thermodynamic system governed by the **Constructal Law**. 
 
----
+When a real-world event occurs, the resulting information naturally optimizes its access paths over time, maintaining structural integrity across varying geographical and institutional nodes. Conversely, an engineered campaign exhibits a distinct, artificial signature: a rapid injection of organized configuration that fails to structurally adapt, resulting in an anomalous, localized collapse of the system's persistence ratio ($\Pi$).
 
-## Scientific Foundation & Citation
-
-This software is the direct algorithmic implementation of the theoretical physics framework established in the core paper:
-
-> **Stewart, Michael S.** (2025). *The Fractal Information Iteration Hypothesis: Implications of Conformal Cyclic Cosmology, Breit-Wheeler Mechanisms, and Kaluza-Klein Manifolds on Persistent Information Topologies.* > **Official Publication DOI:** [10.6084/m9.figshare.24310519](https://doi.org/10.6084/m9.figshare.24310519)
-
-### 1. Principle of Persistent Structurization (PPS)
-* **True Signals Structurize:** Legitimate information vectors naturally accumulate persistent, load-bearing parameters (named grassroots sources, coordinate-specific evidence, localized institutional logging) as scale expands.
-* **False Signals Entropify:** Coordinated narrative campaigns maximize communication heat and velocity while demonstrating rapid structural decay. They strip away local specifics to build abstract, cross-geography emotional alignment.
-
-### 2. Scale-Timescale Optimization Corollary (STOC)
-The engine executes sequential search cascades, continuously tracking the mathematical derivative of structural accumulation ($\Pi$). By identifying the precise thermodynamic saddle point ($\tau^*$), the system automatically executes an **early exit** if a signal breaks down, minimizing computational energy flux and cutting API costs by up to 70%.
+### Core Diagnostics Matrix
+The processing pipeline routes unverified narrative strings through a five-phase search cascade, evaluating the payload against a strict, deterministic schema:
+* **The 6M Wildness Scale:** Classifies narrative velocity and intent across fixed diagnostic tiers (Mundane, Murky, Mysterious, Manufactured, Manic, Mythological).
+* **Saddle-Point Tracking:** Monitors the transmission derivative to spot sudden programmatic drop-offs (*ILO Fade*) or artificial distribution uniformity across alternative nodes.
 
 ---
 
-## Quick Start (Local Deployment)
+## Academic & Corporate Context
 
-### 1. Clone & Set Up the Backend
-```bash
-git clone [https://github.com/yourusername/ilo-analyzer.git](https://github.com/yourusername/ilo-analyzer.git)
-cd ilo-analyzer/backend
-pip install -r requirements.txt
+This architecture represents an implementation milestone for **ChronoDyne Systems, Inc.** structural modeling. 
+
+### Citation
+For the underlying mathematical models, thermodynamic derivations, and formal proofs behind the Fractal Information Iteration Hypothesis, please reference the primary repository documentation and peer-reviewed framework:
+
+> **Stewart, M.** *The Fractal Information Iteration Hypothesis*. 
+> [Digital Object Identifier: Figshare Repository Context]
+
+### Upcoming Presentations
+A live demonstration of this engine's algorithmic translation of Constructal dynamics—specifically focusing on dynamic expert expansion models—will be presented at the **16th Annual Constructal Law Conference** in Paris, France.
+
+---
+
+## Repository Structure
+
+```text
+├── backend/
+│   ├── engine.py            # P4 Gate processing module & JSON schema validation
+│   └── requirements.txt     # Python dependencies (google-genai, tavily-python)
+└── frontend/
+    └── ilo-analyzer-v3.jsx  # React-based Tailwind utility dashboard & live trace telemetry
