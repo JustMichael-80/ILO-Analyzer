@@ -28,6 +28,27 @@ The backend engine is deployed and running live on Render.
 3. Click **"Try it out"**.
 4. Input your JSON payload structure into the request body and click **Execute**.
 
+## ⚠️ Limitations & Current Status
+
+**This is an experimental research prototype** — not a production-grade or authoritative fact-checking tool. It was shipped quickly to test core ideas in public and gather user feedback.
+
+### Key Limitations
+
+* **Heavy Reliance on External Frameworks:** The system depends entirely on Google's Gemini and Tavily for live analysis and data gathering. Outputs can inherit biases, hallucinations, rate limits, or structural inconsistencies from these upstream services. Results may vary over time as underlying models and search indices evolve.
+* **Heuristic, Not Fully Physics-Based Modeling:** The **Persistence Ratio ($\Pi$)** and saddle-point tracking are practical composite scores derived from real-time search results, source diversity, and credibility weights. They are *inspired by* the Constructal Law and the **Principle of Persistent Structurization (PPS)**, but do not currently run live dynamical systems simulations or non-equilibrium thermodynamic models.
+* **Early-Stage Validation:** No large-scale benchmarks have been run against known disinformation datasets, nor has it been formally compared to established OSINT tools yet. False positives and false negatives are expected, especially on edge cases, fast-moving events, or highly coordinated but organic narrative flows.
+* **Search-Dependent Horizon:** Processing performance relies heavily on what is publicly indexed at the exact second of analysis. Paywalled content, hyper-recent events, or heavily suppressed information may produce an incomplete picture.
+* **Adversarial Vulnerability:** Sophisticated adversarial actors could potentially craft narrative footprints designed to mimic natural structural persistence patterns. This tool should be leveraged as one signal among many, never as a standalone verdict.
+* **Operational Scope:** Best suited for exploratory triage and hypothesis generation. It is not designed for legal, journalistic, or high-stakes decision-making without significant human oversight.
+
+### Development Philosophy
+
+The goal of ChronoDyne Systems is iterative improvement through active, real-world testing. Flow metrics like $\Pi$ and the **6M Wildness Scale** will be continuously refined based on user feedback, empirical data, and validation experiments. 
+
+Contributions, edge-case test profiles (both successes and failures), and technical suggestions for further grounding the physical framework are highly welcome.
+
+> 🧠 **Dive into the Physics:** See the formal [theoretical paper](https://doi.org/10.6084/m9.figshare.32307087) for the deeper mathematical and thermodynamic architecture behind PPS.
+
 ---
 
 ## Academic & Corporate Context
