@@ -35,7 +35,7 @@ The backend engine is deployed and running live on Render.
 ### Key Limitations
 
 * **Heavy Reliance on External Frameworks:** The system depends entirely on Google's Gemini and Tavily for live analysis and data gathering. Outputs can inherit biases, hallucinations, rate limits, or structural inconsistencies from these upstream services. Results may vary over time as underlying models and search indices evolve.
-* **Heuristic, Not Fully Physics-Based Modeling:** The **Persistence Ratio ($\Pi$)** and saddle-point tracking are practical composite scores derived from real-time search results, source diversity, and credibility weights. They are *inspired by* the Constructal Law and the **Principle of Persistent Structurization (PPS)**, but do not currently run live dynamical systems simulations or non-equilibrium thermodynamic models.
+* **Heuristic, Not Fully Physics-Based Modeling:** The **Persistence Ratio ($\Pi$)** and saddle-point tracking are practical composite scores derived from real-time search results, source diversity, and credibility weights. They are *inspired by* the Constructal Law and the **Principle of Persistent Structurization (PPS)**, but do not currently run live dynamical systems simulations or non-equilibrium thermodynamic models. The Persistence Ratio (Π) functions as a first-order empirical proxy for testing whether PPS-derived predictions are detectable in real information systems. A direct mathematical implementation of PPS dynamics remains an active development target.
 * **Early-Stage Validation:** No large-scale benchmarks have been run against known disinformation datasets, nor has it been formally compared to established OSINT tools yet. False positives and false negatives are expected, especially on edge cases, fast-moving events, or highly coordinated but organic narrative flows.
 * **Search-Dependent Horizon:** Processing performance relies heavily on what is publicly indexed at the exact second of analysis. Paywalled content, hyper-recent events, or heavily suppressed information may produce an incomplete picture.
 * **Adversarial Vulnerability:** Sophisticated adversarial actors could potentially craft narrative footprints designed to mimic natural structural persistence patterns. This tool should be leveraged as one signal among many, never as a standalone verdict.
@@ -62,7 +62,7 @@ For the underlying mathematical models, thermodynamic derivations, and formal pr
 > [https://doi.org/10.6084/m9.figshare.32307087]
 
 ### Upcoming Presentations
-A live demonstration of this engine's algorithmic translation of Constructal dynamics—specifically focusing on dynamic expert expansion models—will be presented at the **16th Annual Constructal Law Conference** in Paris, France.
+A demonstration of this engine as a first empirical probe of Constructal dynamics applied to information propagation
 
 ---
 
