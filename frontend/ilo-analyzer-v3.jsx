@@ -87,7 +87,7 @@ export default function ILOAnalyzerConsole() {
     simulatePhases();
 
     try {
-      const response = await fetch("http://localhost:8000/analyze", {
+      const response = await fetch("https://ilo-analyzer.onrender.com/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ claim: claim })
