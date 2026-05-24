@@ -19,7 +19,7 @@ from urllib.parse import urlparse, quote_plus
 import cache
 
 CDX_BASE = "https://web.archive.org/cdx/search/cdx"
-CDX_TIMEOUT = 10   # seconds
+CDX_TIMEOUT = 3   # seconds
 CDX_RATE_LIMIT = 1.1  # seconds between uncached requests
 
 _last_cdx_request: float = 0.0
