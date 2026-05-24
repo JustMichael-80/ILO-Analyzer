@@ -366,7 +366,6 @@ async def execute_triage_sieve(request: AnalysisRequest):
 Synthesize the above into a structured verdict. Populate all schema fields.
 Do not include conversational markup or preamble."""
 
-        # ── Step 4: P4 Gate — Gemini verdict synthesis ────────────────────────
         response = ai.models.generate_content(
             model="gemini-2.5-flash",
             contents=user_prompt,
@@ -374,6 +373,7 @@ Do not include conversational markup or preamble."""
                 system_instruction=SYSTEM_PROMPT,
                 temperature=0.05,
                 response_mime_type="application/json",
+                response_schema=PPSVerdict,
             ),
         )
 
