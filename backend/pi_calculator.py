@@ -156,12 +156,18 @@ def compute_pi(search_results: list[dict], fetch_cdx: bool = True) -> PiResult:
                 executor.submit(fetch_snapshot_history, url): url
                 for url, _, _ in url_records
             }
-            for future in as_completed(future_to_url, timeout=8):
-                url = future_to_url[future]
-                try:
-                    cdx_results[url] = future.result(timeout=3)
-                except Exception:
-                    cdx_results[url] = None
+            try:
+                for future in as_completed(future_to_url, timeout=8):
+                    url = future_to_url[future]
+                    try:
+                        cdx_results[url] = future.result(timeout=3)
+                    except Exception:
+                        cdx_results[url] = None
+            except Exception:
+                # Some futures didn't finish within 8s — use whatever we got
+                for future, url in future_to_url.items():
+                    if url not in cdx_results:
+                        cdx_results[url] = None
 
     # Build nodes
     for url, record, trust_score in url_records:
