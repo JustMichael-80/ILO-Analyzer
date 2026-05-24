@@ -137,32 +137,45 @@ def compute_pi(search_results: list[dict], fetch_cdx: bool = True) -> PiResult:
     nodes: list[CitationNode] = []
     seen_urls: set[str] = set()
 
+    # Classify all URLs first
+    url_records = []
     for result in search_results:
         url = result.get("url", "").lower().strip()
         if not url or url in seen_urls:
             continue
         seen_urls.add(url)
-
         record, trust_score = classify_domain(url)
+        url_records.append((url, record, trust_score))
 
-        # CDX lookup for τ_observed
-        tau_days    = None
-        lambda_obs  = None
-        snap_count  = 0
+    # Parallel CDX lookup with hard timeout
+    cdx_results = {}
+    if fetch_cdx and url_records:
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+        with ThreadPoolExecutor(max_workers=8) as executor:
+            future_to_url = {
+                executor.submit(fetch_snapshot_history, url): url
+                for url, _, _ in url_records
+            }
+            for future in as_completed(future_to_url, timeout=8):
+                url = future_to_url[future]
+                try:
+                    cdx_results[url] = future.result(timeout=3)
+                except Exception:
+                    cdx_results[url] = None
 
-        if fetch_cdx:
-            try:
-                from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
-                with ThreadPoolExecutor(max_workers=1) as executor:
-                    future = executor.submit(fetch_snapshot_history, url)
-                    cdx_data = future.result(timeout=3)
-                if cdx_data:
-                    tau_days   = cdx_data.get("tau_observed_days")
-                    snap_count = cdx_data.get("snapshot_count", 0)
-                    curve      = cdx_data.get("frequency_curve", [])
-                    lambda_obs = compute_snapshot_decay_lambda(curve)
-            except Exception:
-                pass  # CDX timeout or failure — proceed without τ_observed for this URL
+    # Build nodes
+    for url, record, trust_score in url_records:
+        cdx_data   = cdx_results.get(url)
+        tau_days   = None
+        lambda_obs = None
+        snap_count = 0
+
+        if cdx_data:
+            tau_days   = cdx_data.get("tau_observed_days")
+            snap_count = cdx_data.get("snapshot_count", 0)
+            curve      = cdx_data.get("frequency_curve", [])
+            lambda_obs = compute_snapshot_decay_lambda(curve)
+
         nodes.append(CitationNode(
             url=url,
             node_class=record.node_class,
