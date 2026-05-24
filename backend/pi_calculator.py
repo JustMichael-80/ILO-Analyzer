@@ -151,13 +151,18 @@ def compute_pi(search_results: list[dict], fetch_cdx: bool = True) -> PiResult:
         snap_count  = 0
 
         if fetch_cdx:
-            cdx_data = fetch_snapshot_history(url)
-            if cdx_data:
-                tau_days   = cdx_data.get("tau_observed_days")
-                snap_count = cdx_data.get("snapshot_count", 0)
-                curve      = cdx_data.get("frequency_curve", [])
-                lambda_obs = compute_snapshot_decay_lambda(curve)
-
+            try:
+                from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
+                with ThreadPoolExecutor(max_workers=1) as executor:
+                    future = executor.submit(fetch_snapshot_history, url)
+                    cdx_data = future.result(timeout=3)
+                if cdx_data:
+                    tau_days   = cdx_data.get("tau_observed_days")
+                    snap_count = cdx_data.get("snapshot_count", 0)
+                    curve      = cdx_data.get("frequency_curve", [])
+                    lambda_obs = compute_snapshot_decay_lambda(curve)
+            except Exception:
+                pass  # CDX timeout or failure — proceed without τ_observed for this URL
         nodes.append(CitationNode(
             url=url,
             node_class=record.node_class,
