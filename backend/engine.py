@@ -408,6 +408,9 @@ Do not include conversational markup or preamble."""
     except json.JSONDecodeError as e:
         raise HTTPException(status_code=502, detail=f"P4 Gate returned malformed JSON: {str(e)}")
     except Exception as e:
+        import traceback
+        tb = traceback.format_exc()
+        print(f"[ChronoDyne ERROR] {tb}")
         raise HTTPException(status_code=500, detail=f"Pipeline collapsed: {str(e)}")
 
 
