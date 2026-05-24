@@ -174,7 +174,7 @@ This architecture is an implementation milestone for ChronoDyne Systems, Inc. Th
 
 ## Citation
 
-Stewart, M. *The Fractal Information Iteration Hypothesis: Supplementing Breit–Wheeler Ignition in Conformal Cyclic Cosmology.* Figshare, 2026. https://doi.org/10.6084/m9.figshare.32307087
+Stewart, M. *The Principle of Persistent Structurization.* Figshare, 2026. https://doi.org/10.6084/m9.figshare.32307087
 
 ---
 
