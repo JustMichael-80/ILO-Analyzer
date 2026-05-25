@@ -1,6 +1,6 @@
-# ChronoDyne Systems, Inc. // ILO Analyzer v4
+# ChronoDyne Systems, Inc. // ILO Analyzer v4.1
 
-An automated, cloud-isolated information triage engine built to identify and map Engineered Information Laundering Operations (ILOs). This architecture bypasses surface-level text classification by measuring the **thermodynamic footprint of data propagation** directly — computing whether a narrative is persisting naturally or being artificially sustained against entropic decay.
+An automated, cloud-isolated information triage engine built to identify and map Engineered Information Laundering Operations (ILOs). This architecture bypasses surface-level text classification by measuring the **thermodynamic footprint of data propagation** directly — computing whether a narrative is persisting naturally or being artificially sustained against entropic decay, across both temporal and geographic dimensions simultaneously.
 
 ---
 
@@ -10,7 +10,7 @@ Standard fact-checking utilities fail because they treat disinformation as a sta
 
 When a real-world event occurs, the resulting information naturally optimizes its access paths over time, maintaining structural integrity across varying geographical and institutional nodes. Conversely, an engineered campaign exhibits a distinct artificial signature: a rapid injection of organized configuration that fails to structurally adapt, or a narrative held artificially above its natural decay threshold by coordinated propagation.
 
-The Persistence Ratio Π is the primary diagnostic instrument:
+### Primary Metric: Persistence Ratio (Π)
 
 **Π = τ_observed / τ_predicted(S)**
 
@@ -25,7 +25,32 @@ Where τ_predicted(S) is derived from the Scale-Timescale Optimization Corollary
 
 Π ≈ 1.0 indicates organic natural persistence. Π >> 1.0 indicates artificial maintenance. Π << 1.0 indicates ILO Fade — engineered collapse faster than natural decay predicts.
 
-This is not a heuristic. The formula is derived from PPS and STOC as published in the formal framework below.
+### Second Metric: Geographic Entropy (Γ)
+
+**Γ = H_geographic / H_expected(t)**
+
+Where H_expected(t) models organic geographic diffusion:
+
+**H_expected(t) = H_max · (1 - e^(-t / τ_diffusion))**
+
+- **H_geographic** = Shannon entropy of source geographic scope distribution
+- **H_expected(t)** = expected entropy for a naturally diffusing story at time t
+- **τ_diffusion = 14 days** (characteristic local→international timescale)
+
+Γ ≈ 1.0 indicates organic diffusion. Γ >> 1.0 indicates coordinated geographic injection — narrative appearing simultaneously at global scope with no local precursor. Γ << 1.0 indicates suppression — narrative geographically contained below natural diffusion prediction.
+
+### The Π/Γ Diagnostic Coordinate Space
+
+Π and Γ are orthogonal measurements — temporal persistence anomaly and spatial diffusion anomaly — derived independently from the same theoretical framework. Together they define a two-dimensional diagnostic space:
+
+| | Γ high | Γ low |
+|---|---|---|
+| **Π high** | **Quadrant I — Confirmed ILO** (injected AND maintained) | **Quadrant II — Astroturfed Local** (manufactured, geographically contained) |
+| **Π low** | **Quadrant III — Viral Suppression** (spreading fast, dying artificially) | **Quadrant IV — Suppressed Real Event** (neither persisting nor diffusing) |
+
+Center (both near 1.0) = Organic.
+
+This is not a heuristic. Both metrics are derived from PPS and STOC as published in the formal framework below.
 
 ---
 
@@ -39,6 +64,7 @@ Every source URL returned by the search cascade is classified against a 60+ doma
 - Political capture penalty (applied when |lean| > 0.6 AND reliability < 0.5)
 - Hard lean penalty (applied when |lean| > 0.8 regardless of reliability)
 - Cross-rater volatility decay (applied when σ_political > 0.3)
+- **Geographic scope and country tags** (feeds Γ calculation)
 
 | Class | Type | Trust Weight | Contribution |
 |-------|------|-------------|--------------|
@@ -47,7 +73,7 @@ Every source URL returned by the search cascade is classified against a 60+ doma
 | C | Volatile/captured outlets, low-reliability aggregators | ~0.00–0.25 | Reduced |
 | D | Propagation nodes (social media, forums) | ~0.01–0.08 | **Inverted — presence raises suspicion** |
 
-Class D nodes (Facebook, Reddit, Twitter/X, TikTok, 4chan, etc.) do not contribute credibility — their presence in a narrative's citation graph is treated as an ILO distribution signature.
+Class D nodes (Facebook, Reddit, Twitter/X, TikTok, 4chan, etc.) do not contribute credibility — their presence in a narrative's citation graph is treated as an ILO distribution signature. Class D nodes are excluded from geographic entropy calculation.
 
 ### Saddle-Point Tracker: NOAA Weather Baseline
 
@@ -63,7 +89,7 @@ Weather systems are open non-equilibrium thermodynamic systems — the original 
 
 ### CDX Temporal Measurement
 
-Source URLs are queried against the Wayback Machine CDX API to extract τ_observed — the actual time delta between first and last confirmed archival citation, measured in days. This converts Π from a theoretical construct into a measured physical quantity. CDX results are cached for 7 days to minimize redundant API calls.
+Source URLs are queried against the Wayback Machine CDX API to extract τ_observed — the actual time delta between first and last confirmed archival citation, measured in days. CDX calls run in parallel with an 8-second hard timeout, degrading gracefully on slow responses. Results are cached for 7 days.
 
 ### Five-Phase Search Cascade
 
@@ -75,7 +101,7 @@ Source URLs are queried against the Wayback Machine CDX API to extract τ_observ
 
 ### P4 Gate (Gemini Verdict Synthesis)
 
-The physics block — Π, τ_observed, τ_predicted, S, E, node classification, saddle-point deviation — is computed deterministically and injected into the P4 Gate as ground truth. Gemini synthesizes a structured verdict from the physics block and qualitative source content. The LLM does not compute Π and cannot override it.
+The full physics block — Π, Γ, quadrant, τ_observed, τ_predicted, S, E, node classification, saddle-point deviation, geographic scope distribution — is computed deterministically and injected into the P4 Gate as ground truth. Gemini synthesizes a structured verdict from the physics block and qualitative source content. The LLM does not compute Π or Γ and cannot override either.
 
 ---
 
@@ -107,12 +133,12 @@ First live test conducted May 24, 2026:
 
 | Tier | Label | Physics Signature |
 |------|-------|------------------|
-| 1 | Mundane | Π ≈ 1.0, Class A/B dominated |
+| 1 | Mundane | Π ≈ 1.0, Γ ≈ 1.0, Class A/B dominated |
 | 2 | Murky | Π slightly elevated, mixed sourcing |
 | 3 | Mysterious | Π deviation emerging, Class C present |
-| 4 | Manufactured | Π significantly deviated, Class D amplification |
-| 5 | Manic | Π collapsed or extreme, saddle-point triggered |
-| 6 | Mythological | No traceable Class A/B sourcing, pure propagation signal |
+| 4 | Manufactured | Π significantly deviated, Class D amplification, Γ anomaly |
+| 5 | Manic | Π extreme, saddle-point triggered, Γ injection signal |
+| 6 | Mythological | No traceable Class A/B sourcing, pure propagation signal, Quadrant I |
 
 ---
 
@@ -123,6 +149,7 @@ First live test conducted May 24, 2026:
 | Frontend | https://ilo-analyzer.vercel.app |
 | API Base | https://ilo-analyzer.onrender.com |
 | API Docs | https://ilo-analyzer.onrender.com/docs |
+| Source | https://github.com/JustMichael-80/ILO-Analyzer |
 
 **Request schema:**
 ```json
@@ -132,7 +159,7 @@ First live test conducted May 24, 2026:
 }
 ```
 
-Setting `fetch_cdx: false` skips Wayback Machine temporal measurement for faster results (Π will reflect citation graph structure only, without τ_observed).
+Setting `fetch_cdx: false` skips Wayback Machine temporal measurement for faster results (Π will reflect citation graph structure only, without τ_observed; Γ still computes from source scope distribution).
 
 ---
 
@@ -141,8 +168,19 @@ Setting `fetch_cdx: false` skips Wayback Machine temporal measurement for faster
 - **Search-dependent horizon:** Analysis reflects what is publicly indexed at the moment of query. Paywalled, suppressed, or hyper-recent content produces incomplete pictures.
 - **CDX coverage:** Wayback Machine archives vary in completeness. τ_observed is a lower bound on actual narrative age.
 - **α and β calibration:** STOC scaling exponents are empirically estimated (α = 1.2, β = 0.5). Full derivation from the benchmark suite is ongoing.
-- **Adversarial vulnerability:** Sophisticated actors could craft narrative footprints designed to mimic natural persistence patterns.
+- **τ_diffusion calibration:** Geographic diffusion timescale set at 14 days. Empirical validation against known organic stories is the next benchmark milestone.
+- **Adversarial vulnerability:** Sophisticated actors could craft narrative footprints designed to mimic natural persistence and diffusion patterns.
 - **Operational scope:** Best suited for exploratory triage and hypothesis generation. Not designed for legal, journalistic, or high-stakes decisions without human oversight.
+
+---
+
+## Validation Benchmark
+
+A 30-claim validation dataset is in active development:
+- **15 known ILOs** — documented disinformation campaigns across multiple categories
+- **15 known clean signals** — verified organic events with documented factual records
+
+Target metrics: Π clustering near 1.0 for clean signals, Quadrant I/II placement for confirmed ILOs. Results will be used to calibrate α, β, and τ_diffusion empirically.
 
 ---
 
@@ -150,23 +188,25 @@ Setting `fetch_cdx: false` skips Wayback Machine temporal measurement for faster
 
 ```
 ├── backend/
-│   ├── engine.py            # FastAPI P4 Gate — search cascade, verdict synthesis
-│   ├── pi_calculator.py     # STOC-derived Π computation from citation graph
-│   ├── bias_table.py        # Class A/B/C/D source classification & trust weights
-│   ├── cdx.py               # Wayback Machine CDX API — τ_observed measurement
-│   ├── weather_baseline.py  # NOAA/open-meteo λ_weather reference curve
-│   ├── cache.py             # SQLite TTL cache (CDX: 7d, bias: 30d, weather: 1d)
+│   ├── engine.py              # FastAPI P4 Gate — search cascade, verdict synthesis
+│   ├── pi_calculator.py       # STOC-derived Π computation from citation graph
+│   ├── gamma_calculator.py    # Geographic Entropy Γ + Π/Γ quadrant assignment
+│   ├── bias_table.py          # Class A/B/C/D classification, trust weights, geo tags
+│   ├── cdx.py                 # Wayback Machine CDX API — τ_observed measurement
+│   ├── weather_baseline.py    # NOAA/open-meteo λ_weather reference curve
+│   ├── cache.py               # SQLite TTL cache (CDX: 7d, bias: 30d, weather: 1d)
 │   └── requirements.txt
 └── frontend/
     └── src/
-        └── App.jsx          # React/Vite/Tailwind dashboard with Physics Diagnostics tab
+        └── App.jsx            # React/Vite/Tailwind dashboard with Π bar, Γ bar,
+                               # quadrant map, and Physics Diagnostics tab
 ```
 
 ---
 
 ## Academic & Corporate Context
 
-This architecture is an implementation milestone for ChronoDyne Systems, Inc. The Persistence Ratio Π and STOC-derived τ_predicted represent the first empirical operationalization of the Principle of Persistent Structurization applied to information systems.
+This architecture is an implementation milestone for ChronoDyne Systems, Inc. The Persistence Ratio Π and Geographic Entropy Γ represent the first empirical operationalization of the Principle of Persistent Structurization applied to information systems — two independently derived metrics from the same theoretical framework measuring orthogonal dimensions of the same phenomenon.
 
 **Upcoming:** A demonstration of this engine as a first empirical probe of Constructal dynamics applied to information propagation will be presented at the **16th Annual Constructal Law Conference (CLC2026), Paris, France, October 2026.**
 
@@ -174,8 +214,8 @@ This architecture is an implementation milestone for ChronoDyne Systems, Inc. Th
 
 ## Citation
 
-Stewart, M. *The Principle of Persistent Structurization.* Figshare, 2026. https://doi.org/10.6084/m9.figshare.32307087
+Stewart, M. *The Fractal Information Iteration Hypothesis: Supplementing Breit–Wheeler Ignition in Conformal Cyclic Cosmology.* Figshare, 2026. https://doi.org/10.6084/m9.figshare.32307087
 
 ---
 
-*ChronoDyne Systems, Inc. · Principle of Persistent Structurization · Π = τ_obs / τ_pred(S)*
+*ChronoDyne Systems, Inc. · Principle of Persistent Structurization · Π = τ_obs / τ_pred(S) · Γ = H_geo / H_exp(t)*
