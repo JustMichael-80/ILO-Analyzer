@@ -500,12 +500,6 @@ async def purge_cache():
     purged = cache.purge_expired()
     return {"purged_entries": purged, "stats": cache.stats()}
 
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 8000)))
-
-
 # ── Report endpoint ───────────────────────────────────────────────────────────
 
 class ReportRequest(BaseModel):
@@ -555,3 +549,8 @@ async def generate_full_report(request: ReportRequest):
         import traceback
         print(f"[ChronoDyne REPORT ERROR] {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Report generation failed: {str(e)}")
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 8000)))
+
