@@ -36,6 +36,7 @@ import cache
 from bias_table import classify_domain, NODE_CLASS_D, NODE_CLASS_A, NODE_CLASS_B
 from pi_calculator import compute_pi, PiResult
 from gamma_calculator import compute_gamma, assign_quadrant, GammaResult
+from report_generator import generate_report
 
 
 # ── Startup ───────────────────────────────────────────────────────────────────
@@ -526,7 +527,6 @@ async def generate_full_report(request: ReportRequest):
     Runs the complete /analyze pipeline then generates a structured
     markdown report with pattern hypotheses and investigative guidance.
     """
-    from report_generator import generate_report
 
     gemini_key = os.environ.get("GEMINI_API_KEY")
     tavily_key = os.environ.get("TAVILY_API_KEY")
