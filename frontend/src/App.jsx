@@ -37,28 +37,29 @@ const VELOCITY_STYLE = (v) => ({
   slow_suppression: { text: "text-amber-400",   label: "SUPPRESSION SIGNAL ⚠" },
 }[v] || { text: "text-slate-500", label: "UNKNOWN" });
 
-const QUADRANT_STYLE = (q = "") => {
-  if (q.includes("I —"))   return "text-rose-400";
-  if (q.includes("II"))    return "text-orange-400";
-  if (q.includes("III"))   return "text-amber-400";
-  if (q.includes("IV"))    return "text-sky-400";
+const QUADRANT_COLOR = (q = "") => {
+  if (q.includes("I —"))  return "text-rose-400";
+  if (q.includes("II"))   return "text-orange-400";
+  if (q.includes("III"))  return "text-amber-400";
+  if (q.includes("IV"))   return "text-sky-400";
   return "text-emerald-400";
 };
 
-function PiBar({ value }) {
+function PiBar({ value = 0 }) {
+  const v = Number(value) || 0;
   const color =
-    value >= 0.70 && value <= 1.40 ? "#34d399" :
-    value < 0.35                    ? "#f43f5e" :
-    value > 2.50                    ? "#fbbf24" :
-    value < 0.70                    ? "#fb923c" : "#22d3ee";
-  const pct = Math.min((Math.min(value, 3) / 3) * 100, 100);
+    v >= 0.70 && v <= 1.40 ? "#34d399" :
+    v < 0.35               ? "#f43f5e" :
+    v > 2.50               ? "#fbbf24" :
+    v < 0.70               ? "#fb923c" : "#22d3ee";
+  const pct = Math.min((Math.min(v, 3) / 3) * 100, 100);
   return (
     <div className="space-y-2">
       <div className="flex justify-between items-end">
         <span className="text-[10px] uppercase tracking-widest text-slate-500">
-          Persistence Ratio Π = τ<sub>obs</sub> / τ<sub>pred</sub>(S)
+          Persistence Ratio Π = τobs / τpred(S)
         </span>
-        <span className="font-black text-xl tabular-nums" style={{ color }}>{value.toFixed(4)}</span>
+        <span className="font-black text-xl tabular-nums" style={{ color }}>{v.toFixed(4)}</span>
       </div>
       <div className="relative h-2 bg-slate-800 rounded overflow-hidden">
         <div className="absolute h-full bg-emerald-900/40 rounded"
@@ -75,18 +76,19 @@ function PiBar({ value }) {
   );
 }
 
-function GammaBar({ value }) {
+function GammaBar({ value = 0 }) {
+  const v = Number(value) || 0;
   const color =
-    value >= 0.70 && value <= 1.40 ? "#34d399" :
-    value > 1.40                    ? "#f43f5e" : "#fbbf24";
-  const pct = Math.min((Math.min(value, 3) / 3) * 100, 100);
+    v >= 0.70 && v <= 1.40 ? "#34d399" :
+    v > 1.40               ? "#f43f5e" : "#fbbf24";
+  const pct = Math.min((Math.min(v, 3) / 3) * 100, 100);
   return (
     <div className="space-y-2">
       <div className="flex justify-between items-end">
         <span className="text-[10px] uppercase tracking-widest text-slate-500">
-          Geographic Entropy Γ = H<sub>geo</sub> / H<sub>expected</sub>(t)
+          Geographic Entropy Γ = Hgeo / Hexpected(t)
         </span>
-        <span className="font-black text-xl tabular-nums" style={{ color }}>{value.toFixed(4)}</span>
+        <span className="font-black text-xl tabular-nums" style={{ color }}>{v.toFixed(4)}</span>
       </div>
       <div className="relative h-2 bg-slate-800 rounded overflow-hidden">
         <div className="absolute h-full bg-emerald-900/40 rounded"
@@ -103,28 +105,28 @@ function GammaBar({ value }) {
   );
 }
 
-function QuadrantMap({ pi, gamma, quadrant }) {
-  const piHigh  = pi    > 1.40;
-  const piLow   = pi    < 0.70;
-  const gamHigh = gamma > 1.40;
-  const gamLow  = gamma < 0.70;
+function QuadrantMap({ pi = 0, gamma = 0, quadrant = "" }) {
+  const piV   = Number(pi)    || 0;
+  const gamV  = Number(gamma) || 0;
+  const piHigh  = piV  > 1.40;
+  const piLow   = piV  < 0.70;
+  const gamHigh = gamV > 1.40;
+  const gamLow  = gamV < 0.70;
+  const isOrganic = !piHigh && !piLow && !gamHigh && !gamLow;
 
   const cells = [
-    { label: "I\nConfirmed ILO",         active: piHigh && gamHigh,  color: "#f43f5e" },
-    { label: "III\nViral Suppression",   active: piLow  && gamHigh,  color: "#fbbf24" },
-    { label: "II\nAstroturfed Local",    active: piHigh && gamLow,   color: "#fb923c" },
-    { label: "IV\nSuppressed Event",     active: piLow  && gamLow,   color: "#38bdf8" },
+    { label: "I — Confirmed ILO",       active: piHigh && gamHigh,  color: "#f43f5e" },
+    { label: "III — Viral Suppression",  active: piLow  && gamHigh,  color: "#fbbf24" },
+    { label: "II — Astroturfed Local",   active: piHigh && gamLow,   color: "#fb923c" },
+    { label: "IV — Suppressed Event",    active: piLow  && gamLow,   color: "#38bdf8" },
   ];
-
-  const isOrganic = !piHigh && !piLow && !gamHigh && !gamLow;
 
   return (
     <div className="space-y-2">
       <span className="text-[10px] uppercase tracking-widest text-slate-500">Π/Γ Diagnostic Quadrant</span>
       <div className="grid grid-cols-2 gap-1">
         {cells.map((cell, i) => (
-          <div key={i}
-               className="rounded p-2 border text-center text-[9px] uppercase tracking-wider leading-tight whitespace-pre-line transition-all"
+          <div key={i} className="rounded p-2 border text-center text-[9px] uppercase tracking-wider leading-tight transition-all"
                style={{
                  borderColor: cell.active ? cell.color : "#1e293b",
                  background:  cell.active ? `${cell.color}22` : "#0f172a",
@@ -136,13 +138,11 @@ function QuadrantMap({ pi, gamma, quadrant }) {
         ))}
       </div>
       {isOrganic && (
-        <div className="text-center text-[10px] text-emerald-400 font-bold tracking-widest">
-          ● ORGANIC
-        </div>
+        <div className="text-center text-[10px] text-emerald-400 font-bold tracking-widest">● ORGANIC</div>
       )}
-      <p className={`text-[10px] font-bold tracking-wider ${QUADRANT_STYLE(quadrant)}`}>
-        {quadrant}
-      </p>
+      {quadrant && (
+        <p className={`text-[10px] font-bold tracking-wider ${QUADRANT_COLOR(quadrant)}`}>{quadrant}</p>
+      )}
     </div>
   );
 }
@@ -158,12 +158,20 @@ function MetricCard({ label, value, detail, accent = "text-teal-400" }) {
 }
 
 function PhysicsPanel({ pi_diag, gamma_diag }) {
-  if (!pi_diag) return null;
-  const saddle   = SADDLE_STYLE(pi_diag.saddle_point?.classification);
-  const velocity = VELOCITY_STYLE(gamma_diag?.diffusion_velocity);
+  if (!pi_diag) return (
+    <div className="text-slate-600 text-[10px] text-center py-8">No physics data available.</div>
+  );
+
+  const saddle      = SADDLE_STYLE(pi_diag.saddle_point?.classification);
+  const scopeDist   = (gamma_diag && gamma_diag.scope_distribution)   ? gamma_diag.scope_distribution   : {};
+  const countryDist = (gamma_diag && gamma_diag.country_distribution)  ? gamma_diag.country_distribution  : {};
+  const velocity    = VELOCITY_STYLE(gamma_diag?.diffusion_velocity);
+  const scopeEntries   = Object.entries(scopeDist);
+  const scopeRankLabel = ["local","national","international","global"][gamma_diag?.max_scope_rank ?? 1] ?? "unknown";
 
   return (
     <div className="space-y-4">
+
       {/* Π block */}
       <div className="border border-slate-700/50 rounded bg-slate-950 p-4 space-y-4">
         <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
@@ -172,20 +180,20 @@ function PhysicsPanel({ pi_diag, gamma_diag }) {
             Persistence Ratio (Π) — Temporal Anomaly
           </span>
         </div>
-        <PiBar pi={pi_diag.pi_final} />
+        <PiBar value={pi_diag.pi_final} />
         <p className="text-[10px] text-slate-400 leading-relaxed border-l-2 border-teal-500/30 pl-3">
-          {pi_diag.pi_interpretation}
+          {pi_diag.pi_interpretation || ""}
         </p>
         <div className="grid grid-cols-2 gap-2 text-[10px]">
           {[
-            ["τ observed",     `${pi_diag.tau_observed_days}d`],
-            ["τ predicted",    `${pi_diag.tau_predicted_days}d`],
-            ["S (entropy)",    pi_diag.S.toFixed(4)],
-            ["E (complexity)", pi_diag.E.toFixed(4)],
-            ["Nodes",          pi_diag.node_count],
-            ["Class A",        pi_diag.class_a_count],
-            ["Class D",        pi_diag.class_d_count],
-            ["Inv. signal",    pi_diag.inverted_signal.toFixed(4)],
+            ["τ observed",     `${pi_diag.tau_observed_days ?? 0}d`],
+            ["τ predicted",    `${pi_diag.tau_predicted_days ?? 0}d`],
+            ["S (entropy)",    (pi_diag.S ?? 0).toFixed(4)],
+            ["E (complexity)", (pi_diag.E ?? 0).toFixed(4)],
+            ["Nodes",          pi_diag.node_count ?? 0],
+            ["Class A",        pi_diag.class_a_count ?? 0],
+            ["Class D",        pi_diag.class_d_count ?? 0],
+            ["Inv. signal",    (pi_diag.inverted_signal ?? 0).toFixed(4)],
           ].map(([label, val]) => (
             <div key={label} className="flex justify-between bg-slate-900 rounded px-2 py-1.5">
               <span className="text-slate-600 uppercase tracking-wider">{label}</span>
@@ -196,17 +204,15 @@ function PhysicsPanel({ pi_diag, gamma_diag }) {
         {pi_diag.saddle_point && (
           <div className="border border-slate-800 rounded p-3 space-y-1">
             <div className="flex justify-between items-center">
-              <span className="text-[9px] uppercase tracking-widest text-slate-600">
-                Saddle-Point // NOAA Weather Baseline
-              </span>
+              <span className="text-[9px] uppercase tracking-widest text-slate-600">Saddle-Point // NOAA Weather Baseline</span>
               <span className={`text-[10px] font-bold ${saddle.text}`}>{saddle.label}</span>
             </div>
-            {pi_diag.saddle_point.delta !== null && pi_diag.saddle_point.delta !== undefined && (
+            {pi_diag.saddle_point.delta != null && (
               <div className="flex gap-4 text-[9px] text-slate-600">
-                <span>λ<sub>obs</sub> = {pi_diag.saddle_point.lambda_observed?.toFixed(4) ?? "—"}</span>
-                <span>λ<sub>wx</sub> = {pi_diag.saddle_point.lambda_weather?.toFixed(4)}</span>
-                <span>Δ = {pi_diag.saddle_point.delta?.toFixed(4)}</span>
-                <span className="ml-auto text-slate-700">{pi_diag.saddle_point.baseline_source}</span>
+                <span>λobs = {(pi_diag.saddle_point.lambda_observed ?? 0).toFixed(4)}</span>
+                <span>λwx = {(pi_diag.saddle_point.lambda_weather ?? 0).toFixed(4)}</span>
+                <span>Δ = {(pi_diag.saddle_point.delta ?? 0).toFixed(4)}</span>
+                <span className="ml-auto text-slate-700">{pi_diag.saddle_point.baseline_source ?? ""}</span>
               </div>
             )}
           </div>
@@ -224,13 +230,13 @@ function PhysicsPanel({ pi_diag, gamma_diag }) {
           </div>
           <GammaBar value={gamma_diag.gamma} />
           <p className="text-[10px] text-slate-400 leading-relaxed border-l-2 border-purple-500/30 pl-3">
-            {gamma_diag.gamma_interpretation}
+            {gamma_diag.gamma_interpretation || ""}
           </p>
           <div className="grid grid-cols-2 gap-2 text-[10px]">
             {[
-              ["H geographic", gamma_diag.h_geographic.toFixed(4)],
-              ["H expected",   gamma_diag.h_expected.toFixed(4)],
-              ["Max scope",    ["local","national","international","global"][gamma_diag.max_scope_rank] ?? "unknown"],
+              ["H geographic", (gamma_diag.h_geographic ?? 0).toFixed(4)],
+              ["H expected",   (gamma_diag.h_expected   ?? 0).toFixed(4)],
+              ["Max scope",    scopeRankLabel],
             ].map(([label, val]) => (
               <div key={label} className="flex justify-between bg-slate-900 rounded px-2 py-1.5">
                 <span className="text-slate-600 uppercase tracking-wider">{label}</span>
@@ -243,12 +249,11 @@ function PhysicsPanel({ pi_diag, gamma_diag }) {
             </div>
           </div>
 
-          {/* Scope distribution */}
-          {gamma_diag.scope_distribution && Object.keys(gamma_diag.scope_distribution).length > 0 && (
+          {scopeEntries.length > 0 && (
             <div className="border border-slate-800 rounded p-3 space-y-2">
               <span className="text-[9px] uppercase tracking-widest text-slate-600">Scope Distribution</span>
               <div className="flex gap-2 flex-wrap">
-                {Object.entries(gamma_diag.scope_distribution).map(([scope, count]) => (
+                {scopeEntries.map(([scope, count]) => (
                   <span key={scope} className="text-[9px] px-2 py-0.5 rounded border border-slate-700 text-slate-400">
                     {scope}: {count}
                   </span>
@@ -257,11 +262,10 @@ function PhysicsPanel({ pi_diag, gamma_diag }) {
             </div>
           )}
 
-          {/* Quadrant map */}
           <QuadrantMap
             pi={pi_diag.pi_final}
             gamma={gamma_diag.gamma}
-            quadrant={gamma_diag.quadrant}
+            quadrant={gamma_diag.quadrant || ""}
           />
         </div>
       )}
@@ -301,7 +305,6 @@ export default function ILOAnalyzerConsole() {
     setVerdict(null);
     setTab("verdict");
     simulatePhases();
-
     try {
       const res = await fetch(`${API_BASE}/analyze`, {
         method:  "POST",
@@ -343,6 +346,7 @@ export default function ILOAnalyzerConsole() {
       </header>
 
       <main className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
+
         {/* Left: Input */}
         <section className="lg:col-span-1 space-y-4">
           <div className="bg-slate-900 border border-slate-800 rounded p-5 shadow-xl">
@@ -416,6 +420,7 @@ export default function ILOAnalyzerConsole() {
         <section className="lg:col-span-2">
           {verdict ? (
             <div className="space-y-4">
+
               {/* Verdict header */}
               <div className={`border ${vs.border} ${vs.bg} p-5 rounded flex items-center justify-between gap-4 flex-wrap`}
                    style={{ boxShadow: `0 0 24px ${vs.glow}` }}>
@@ -443,7 +448,7 @@ export default function ILOAnalyzerConsole() {
 
               {/* Quadrant badge */}
               {verdict.gamma_diagnostics?.quadrant && (
-                <div className={`text-center text-[11px] font-bold tracking-widest py-2 rounded border border-slate-800 ${QUADRANT_STYLE(verdict.gamma_diagnostics.quadrant)}`}>
+                <div className={`text-center text-[11px] font-bold tracking-widest py-2 rounded border border-slate-800 ${QUADRANT_COLOR(verdict.gamma_diagnostics.quadrant)}`}>
                   Π/Γ QUADRANT: {verdict.gamma_diagnostics.quadrant}
                 </div>
               )}
@@ -556,6 +561,7 @@ export default function ILOAnalyzerConsole() {
                 />
               )}
             </div>
+
           ) : (
             <div className="h-full min-h-64 flex flex-col items-center justify-center border border-dashed border-slate-800 rounded p-12 text-center text-slate-600">
               <div className="w-8 h-8 mb-4 opacity-30 border border-slate-600 rounded flex items-center justify-center">
@@ -572,11 +578,18 @@ export default function ILOAnalyzerConsole() {
 
       <footer className="max-w-6xl mx-auto mt-8 pt-4 border-t border-slate-900 flex justify-between items-center flex-wrap gap-2">
         <span className="text-[9px] text-slate-700 uppercase tracking-widest">
-          ChronoDyne Systems · PPS · STOC · Π = τ_obs/τ_pred(S) · Γ = H_geo/H_exp(t)
+          ChronoDyne Systems · PPS · STOC · Π = τobs/τpred(S) · Γ = Hgeo/Hexp(t)
         </span>
         <span className="text-[9px] text-slate-700 uppercase tracking-widest">
           CDX · NOAA Baseline · P4 Gate · v4.1.0
         </span>
+        <a href="https://github.com/JustMichael-80/ILO-Analyzer"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-[9px] text-slate-600 hover:text-teal-400 uppercase tracking-widest transition-colors"
+        >
+          GitHub ↗
+        </a>
       </footer>
     </div>
   );
