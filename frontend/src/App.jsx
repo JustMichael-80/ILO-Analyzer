@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 
 const API_BASE = "https://ilo-analyzer.onrender.com";
 
@@ -10,20 +10,13 @@ const PHASES = [
   { label: "Phase 5 // Institutional corroboration", max: 3 },
 ];
 
-const CLASS_COLORS = {
-  A: { text: "text-emerald-400", bg: "bg-emerald-950/40", border: "border-emerald-500/30", label: "PRIMARY" },
-  B: { text: "text-sky-400",     bg: "bg-sky-950/40",     border: "border-sky-500/30",     label: "CREDENTIALED" },
-  C: { text: "text-amber-400",   bg: "bg-amber-950/40",   border: "border-amber-500/30",   label: "VOLATILE" },
-  D: { text: "text-rose-500",    bg: "bg-rose-950/40",    border: "border-rose-500/30",    label: "PROPAGATION ⚠" },
-};
-
 const VERDICT_STYLE = (verdict = "") => {
   const v = verdict.toLowerCase();
-  if (v.includes("clean"))       return { border: "border-emerald-500/40", bg: "bg-emerald-950/20", text: "text-emerald-400", glow: "#34d39966" };
-  if (v.includes("suppression")) return { border: "border-amber-500/40",   bg: "bg-amber-950/20",   text: "text-amber-400",   glow: "#fbbf2466" };
-  if (v.includes("anomalous"))   return { border: "border-cyan-500/40",    bg: "bg-cyan-950/20",    text: "text-cyan-400",    glow: "#22d3ee66" };
-  if (v.includes("insufficient"))return { border: "border-slate-600/40",   bg: "bg-slate-900/20",   text: "text-slate-400",   glow: "#94a3b866" };
-  return                                 { border: "border-rose-500/40",    bg: "bg-rose-950/20",    text: "text-rose-400",    glow: "#f43f5e66" };
+  if (v.includes("clean"))        return { border: "border-emerald-500/40", bg: "bg-emerald-950/20", text: "text-emerald-400", glow: "#34d39966" };
+  if (v.includes("suppression"))  return { border: "border-amber-500/40",   bg: "bg-amber-950/20",   text: "text-amber-400",   glow: "#fbbf2466" };
+  if (v.includes("anomalous"))    return { border: "border-cyan-500/40",    bg: "bg-cyan-950/20",    text: "text-cyan-400",    glow: "#22d3ee66" };
+  if (v.includes("insufficient")) return { border: "border-slate-600/40",   bg: "bg-slate-900/20",   text: "text-slate-400",   glow: "#94a3b866" };
+  return                                  { border: "border-rose-500/40",    bg: "bg-rose-950/20",    text: "text-rose-400",    glow: "#f43f5e66" };
 };
 
 const WILDNESS_COLOR = (tier) => ({
@@ -31,39 +24,45 @@ const WILDNESS_COLOR = (tier) => ({
   4: "text-orange-400",  5: "text-rose-400", 6: "text-purple-400",
 }[tier] || "text-teal-400");
 
-const SADDLE_STYLE = (classification) => ({
+const SADDLE_STYLE = (c) => ({
   organic:    { text: "text-emerald-400", label: "ORGANIC DECAY" },
   ilo_fade:   { text: "text-rose-400",    label: "ILO FADE ⚠" },
   maintained: { text: "text-amber-400",   label: "ARTIFICIAL MAINTENANCE ⚠" },
   no_data:    { text: "text-slate-500",   label: "NO DATA" },
-}[classification] || { text: "text-slate-500", label: "UNKNOWN" });
+}[c] || { text: "text-slate-500", label: "UNKNOWN" });
 
-function PiGauge({ pi }) {
-  const clamped = Math.min(Math.max(pi, 0), 3);
-  // Organic zone: 0.70–1.40
+const VELOCITY_STYLE = (v) => ({
+  organic:          { text: "text-emerald-400", label: "ORGANIC DIFFUSION" },
+  fast_injection:   { text: "text-rose-400",    label: "FAST INJECTION ⚠" },
+  slow_suppression: { text: "text-amber-400",   label: "SUPPRESSION SIGNAL ⚠" },
+}[v] || { text: "text-slate-500", label: "UNKNOWN" });
+
+const QUADRANT_STYLE = (q = "") => {
+  if (q.includes("I —"))   return "text-rose-400";
+  if (q.includes("II"))    return "text-orange-400";
+  if (q.includes("III"))   return "text-amber-400";
+  if (q.includes("IV"))    return "text-sky-400";
+  return "text-emerald-400";
+};
+
+function PiBar({ value }) {
   const color =
-    pi >= 0.70 && pi <= 1.40 ? "#34d399" :
-    pi < 0.35                 ? "#f43f5e" :
-    pi > 2.50                 ? "#fbbf24" :
-    pi < 0.70                 ? "#fb923c" : "#22d3ee";
-
-  const pct = Math.min((clamped / 3) * 100, 100);
-
+    value >= 0.70 && value <= 1.40 ? "#34d399" :
+    value < 0.35                    ? "#f43f5e" :
+    value > 2.50                    ? "#fbbf24" :
+    value < 0.70                    ? "#fb923c" : "#22d3ee";
+  const pct = Math.min((Math.min(value, 3) / 3) * 100, 100);
   return (
     <div className="space-y-2">
       <div className="flex justify-between items-end">
         <span className="text-[10px] uppercase tracking-widest text-slate-500">
           Persistence Ratio Π = τ<sub>obs</sub> / τ<sub>pred</sub>(S)
         </span>
-        <span className="font-black text-xl tabular-nums" style={{ color }}>
-          {pi.toFixed(4)}
-        </span>
+        <span className="font-black text-xl tabular-nums" style={{ color }}>{value.toFixed(4)}</span>
       </div>
       <div className="relative h-2 bg-slate-800 rounded overflow-hidden">
-        {/* Organic zone marker */}
         <div className="absolute h-full bg-emerald-900/40 rounded"
              style={{ left: `${(0.70/3)*100}%`, width: `${((1.40-0.70)/3)*100}%` }} />
-        {/* Π bar */}
         <div className="absolute h-full rounded transition-all duration-700"
              style={{ width: `${pct}%`, background: color, boxShadow: `0 0 10px ${color}88` }} />
       </div>
@@ -76,73 +75,74 @@ function PiGauge({ pi }) {
   );
 }
 
-function PhysicsPanel({ diag }) {
-  if (!diag) return null;
-  const { pi_final, tau_observed_days, tau_predicted_days, S, E,
-          node_count, class_a_count, class_d_count, inverted_signal,
-          pi_interpretation, saddle_point } = diag;
-  const saddle = SADDLE_STYLE(saddle_point?.classification);
+function GammaBar({ value }) {
+  const color =
+    value >= 0.70 && value <= 1.40 ? "#34d399" :
+    value > 1.40                    ? "#f43f5e" : "#fbbf24";
+  const pct = Math.min((Math.min(value, 3) / 3) * 100, 100);
+  return (
+    <div className="space-y-2">
+      <div className="flex justify-between items-end">
+        <span className="text-[10px] uppercase tracking-widest text-slate-500">
+          Geographic Entropy Γ = H<sub>geo</sub> / H<sub>expected</sub>(t)
+        </span>
+        <span className="font-black text-xl tabular-nums" style={{ color }}>{value.toFixed(4)}</span>
+      </div>
+      <div className="relative h-2 bg-slate-800 rounded overflow-hidden">
+        <div className="absolute h-full bg-emerald-900/40 rounded"
+             style={{ left: `${(0.70/3)*100}%`, width: `${((1.40-0.70)/3)*100}%` }} />
+        <div className="absolute h-full rounded transition-all duration-700"
+             style={{ width: `${pct}%`, background: color, boxShadow: `0 0 10px ${color}88` }} />
+      </div>
+      <div className="flex justify-between text-[9px] text-slate-700 uppercase tracking-wider">
+        <span>Suppression</span>
+        <span className="text-emerald-800">Organic Zone</span>
+        <span>Injection</span>
+      </div>
+    </div>
+  );
+}
+
+function QuadrantMap({ pi, gamma, quadrant }) {
+  const piHigh  = pi    > 1.40;
+  const piLow   = pi    < 0.70;
+  const gamHigh = gamma > 1.40;
+  const gamLow  = gamma < 0.70;
+
+  const cells = [
+    { label: "I\nConfirmed ILO",         active: piHigh && gamHigh,  color: "#f43f5e" },
+    { label: "III\nViral Suppression",   active: piLow  && gamHigh,  color: "#fbbf24" },
+    { label: "II\nAstroturfed Local",    active: piHigh && gamLow,   color: "#fb923c" },
+    { label: "IV\nSuppressed Event",     active: piLow  && gamLow,   color: "#38bdf8" },
+  ];
+
+  const isOrganic = !piHigh && !piLow && !gamHigh && !gamLow;
 
   return (
-    <div className="border border-slate-700/50 rounded bg-slate-950 p-4 space-y-4">
-      <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
-        <div className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse" />
-        <span className="text-[10px] uppercase tracking-widest text-teal-400 font-bold">
-          Physics Diagnostic Block
-        </span>
-        <span className="text-[9px] text-slate-600 ml-auto">STOC · PPS · NOAA Baseline</span>
-      </div>
-
-      <PiGauge pi={pi_final} />
-
-      <p className="text-[10px] text-slate-400 leading-relaxed border-l-2 border-teal-500/30 pl-3">
-        {pi_interpretation}
-      </p>
-
-      <div className="grid grid-cols-2 gap-2 text-[10px]">
-        {[
-          ["τ observed",    `${tau_observed_days}d`],
-          ["τ predicted",   `${tau_predicted_days}d`],
-          ["S (entropy)",   S.toFixed(4)],
-          ["E (complexity)",E.toFixed(4)],
-          ["Nodes",         node_count],
-          ["Class A",       class_a_count],
-          ["Class D",       class_d_count],
-          ["Inv. signal",   inverted_signal.toFixed(4)],
-        ].map(([label, val]) => (
-          <div key={label} className="flex justify-between bg-slate-900 rounded px-2 py-1.5">
-            <span className="text-slate-600 uppercase tracking-wider">{label}</span>
-            <span className="text-slate-300 font-bold tabular-nums">{val}</span>
+    <div className="space-y-2">
+      <span className="text-[10px] uppercase tracking-widest text-slate-500">Π/Γ Diagnostic Quadrant</span>
+      <div className="grid grid-cols-2 gap-1">
+        {cells.map((cell, i) => (
+          <div key={i}
+               className="rounded p-2 border text-center text-[9px] uppercase tracking-wider leading-tight whitespace-pre-line transition-all"
+               style={{
+                 borderColor: cell.active ? cell.color : "#1e293b",
+                 background:  cell.active ? `${cell.color}22` : "#0f172a",
+                 color:       cell.active ? cell.color : "#475569",
+                 boxShadow:   cell.active ? `0 0 12px ${cell.color}44` : "none",
+               }}>
+            {cell.label}
           </div>
         ))}
       </div>
-
-      {saddle_point && (
-        <div className="border border-slate-800 rounded p-3 space-y-1">
-          <div className="flex justify-between items-center">
-            <span className="text-[9px] uppercase tracking-widest text-slate-600">
-              Saddle-Point // NOAA Weather Baseline
-            </span>
-            <span className={`text-[10px] font-bold ${saddle.text}`}>{saddle.label}</span>
-          </div>
-          {saddle_point.delta !== null && saddle_point.delta !== undefined && (
-            <div className="flex gap-4 text-[9px] text-slate-600">
-              <span>λ<sub>obs</sub> = {saddle_point.lambda_observed?.toFixed(4) ?? "—"}</span>
-              <span>λ<sub>wx</sub> = {saddle_point.lambda_weather?.toFixed(4)}</span>
-              <span>Δ = {saddle_point.delta?.toFixed(4)}</span>
-              <span className="ml-auto text-slate-700">{saddle_point.baseline_source}</span>
-            </div>
-          )}
+      {isOrganic && (
+        <div className="text-center text-[10px] text-emerald-400 font-bold tracking-widest">
+          ● ORGANIC
         </div>
       )}
-
-      {inverted_signal > 2.0 && (
-        <div className="border border-rose-500/30 bg-rose-950/10 rounded px-3 py-2">
-          <span className="text-[10px] text-rose-400 font-bold">
-            ⚠ High Class D amplification — ILO distribution signature detected
-          </span>
-        </div>
-      )}
+      <p className={`text-[10px] font-bold tracking-wider ${QUADRANT_STYLE(quadrant)}`}>
+        {quadrant}
+      </p>
     </div>
   );
 }
@@ -152,10 +152,118 @@ function MetricCard({ label, value, detail, accent = "text-teal-400" }) {
     <div className="bg-slate-950 p-3 rounded border border-slate-800/60 space-y-1">
       <span className="block text-[10px] uppercase tracking-widest text-slate-500">{label}</span>
       <span className={`text-sm font-bold ${accent}`}>{value}</span>
-      {detail && (
-        <p className="text-xs text-slate-400 leading-relaxed pt-1 border-t border-slate-900 mt-1">
-          {detail}
+      {detail && <p className="text-xs text-slate-400 leading-relaxed pt-1 border-t border-slate-900 mt-1">{detail}</p>}
+    </div>
+  );
+}
+
+function PhysicsPanel({ pi_diag, gamma_diag }) {
+  if (!pi_diag) return null;
+  const saddle   = SADDLE_STYLE(pi_diag.saddle_point?.classification);
+  const velocity = VELOCITY_STYLE(gamma_diag?.diffusion_velocity);
+
+  return (
+    <div className="space-y-4">
+      {/* Π block */}
+      <div className="border border-slate-700/50 rounded bg-slate-950 p-4 space-y-4">
+        <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
+          <div className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse" />
+          <span className="text-[10px] uppercase tracking-widest text-teal-400 font-bold">
+            Persistence Ratio (Π) — Temporal Anomaly
+          </span>
+        </div>
+        <PiBar pi={pi_diag.pi_final} />
+        <p className="text-[10px] text-slate-400 leading-relaxed border-l-2 border-teal-500/30 pl-3">
+          {pi_diag.pi_interpretation}
         </p>
+        <div className="grid grid-cols-2 gap-2 text-[10px]">
+          {[
+            ["τ observed",     `${pi_diag.tau_observed_days}d`],
+            ["τ predicted",    `${pi_diag.tau_predicted_days}d`],
+            ["S (entropy)",    pi_diag.S.toFixed(4)],
+            ["E (complexity)", pi_diag.E.toFixed(4)],
+            ["Nodes",          pi_diag.node_count],
+            ["Class A",        pi_diag.class_a_count],
+            ["Class D",        pi_diag.class_d_count],
+            ["Inv. signal",    pi_diag.inverted_signal.toFixed(4)],
+          ].map(([label, val]) => (
+            <div key={label} className="flex justify-between bg-slate-900 rounded px-2 py-1.5">
+              <span className="text-slate-600 uppercase tracking-wider">{label}</span>
+              <span className="text-slate-300 font-bold tabular-nums">{val}</span>
+            </div>
+          ))}
+        </div>
+        {pi_diag.saddle_point && (
+          <div className="border border-slate-800 rounded p-3 space-y-1">
+            <div className="flex justify-between items-center">
+              <span className="text-[9px] uppercase tracking-widest text-slate-600">
+                Saddle-Point // NOAA Weather Baseline
+              </span>
+              <span className={`text-[10px] font-bold ${saddle.text}`}>{saddle.label}</span>
+            </div>
+            {pi_diag.saddle_point.delta !== null && pi_diag.saddle_point.delta !== undefined && (
+              <div className="flex gap-4 text-[9px] text-slate-600">
+                <span>λ<sub>obs</sub> = {pi_diag.saddle_point.lambda_observed?.toFixed(4) ?? "—"}</span>
+                <span>λ<sub>wx</sub> = {pi_diag.saddle_point.lambda_weather?.toFixed(4)}</span>
+                <span>Δ = {pi_diag.saddle_point.delta?.toFixed(4)}</span>
+                <span className="ml-auto text-slate-700">{pi_diag.saddle_point.baseline_source}</span>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Γ block */}
+      {gamma_diag && (
+        <div className="border border-slate-700/50 rounded bg-slate-950 p-4 space-y-4">
+          <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
+            <div className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />
+            <span className="text-[10px] uppercase tracking-widest text-purple-400 font-bold">
+              Geographic Entropy (Γ) — Spatial Diffusion Anomaly
+            </span>
+          </div>
+          <GammaBar value={gamma_diag.gamma} />
+          <p className="text-[10px] text-slate-400 leading-relaxed border-l-2 border-purple-500/30 pl-3">
+            {gamma_diag.gamma_interpretation}
+          </p>
+          <div className="grid grid-cols-2 gap-2 text-[10px]">
+            {[
+              ["H geographic", gamma_diag.h_geographic.toFixed(4)],
+              ["H expected",   gamma_diag.h_expected.toFixed(4)],
+              ["Max scope",    ["local","national","international","global"][gamma_diag.max_scope_rank] ?? "unknown"],
+            ].map(([label, val]) => (
+              <div key={label} className="flex justify-between bg-slate-900 rounded px-2 py-1.5">
+                <span className="text-slate-600 uppercase tracking-wider">{label}</span>
+                <span className="text-slate-300 font-bold tabular-nums">{val}</span>
+              </div>
+            ))}
+            <div className="flex justify-between bg-slate-900 rounded px-2 py-1.5">
+              <span className="text-slate-600 uppercase tracking-wider">Velocity</span>
+              <span className={`font-bold text-[10px] ${velocity.text}`}>{velocity.label}</span>
+            </div>
+          </div>
+
+          {/* Scope distribution */}
+          {gamma_diag.scope_distribution && Object.keys(gamma_diag.scope_distribution).length > 0 && (
+            <div className="border border-slate-800 rounded p-3 space-y-2">
+              <span className="text-[9px] uppercase tracking-widest text-slate-600">Scope Distribution</span>
+              <div className="flex gap-2 flex-wrap">
+                {Object.entries(gamma_diag.scope_distribution).map(([scope, count]) => (
+                  <span key={scope} className="text-[9px] px-2 py-0.5 rounded border border-slate-700 text-slate-400">
+                    {scope}: {count}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Quadrant map */}
+          <QuadrantMap
+            pi={pi_diag.pi_final}
+            gamma={gamma_diag.gamma}
+            quadrant={gamma_diag.quadrant}
+          />
+        </div>
       )}
     </div>
   );
@@ -168,7 +276,7 @@ export default function ILOAnalyzerConsole() {
   const [runningPi, setRunningPi]   = useState(null);
   const [verdict, setVerdict]       = useState(null);
   const [error, setError]           = useState(null);
-  const [tab, setTab]               = useState("verdict"); // verdict | physics
+  const [tab, setTab]               = useState("verdict");
   const phaseTimer                  = useRef(null);
 
   const simulatePhases = () => {
@@ -218,8 +326,6 @@ export default function ILOAnalyzerConsole() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-mono p-4 md:p-6 selection:bg-teal-500 selection:text-slate-950">
-
-      {/* Header */}
       <header className="border-b border-slate-800 pb-4 mb-6">
         <div className="flex justify-between items-start flex-wrap gap-3">
           <div>
@@ -227,20 +333,17 @@ export default function ILOAnalyzerConsole() {
               CHRONODYNE SYSTEMS // ILO ANALYZER
             </h1>
             <p className="text-[11px] text-slate-500 mt-1">
-              Sieve Module v4.0.0 · PPS · STOC · NOAA Weather Baseline · Wayback CDX
+              v4.1.0 · PPS · STOC · Π · Γ · NOAA Baseline · Wayback CDX
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] px-2.5 py-1 rounded border border-teal-500/30 bg-teal-950/20 text-teal-400 tracking-wider">
-              P4 GATE ACTIVE
-            </span>
-          </div>
+          <span className="text-[10px] px-2.5 py-1 rounded border border-teal-500/30 bg-teal-950/20 text-teal-400 tracking-wider">
+            P4 GATE ACTIVE
+          </span>
         </div>
       </header>
 
       <main className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-        {/* Left: Input + cascade log */}
+        {/* Left: Input */}
         <section className="lg:col-span-1 space-y-4">
           <div className="bg-slate-900 border border-slate-800 rounded p-5 shadow-xl">
             <h2 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-4">
@@ -271,7 +374,6 @@ export default function ILOAnalyzerConsole() {
             </div>
           </div>
 
-          {/* Cascade log */}
           {loading && (
             <div className="bg-slate-900/50 border border-teal-500/20 rounded p-4 space-y-3">
               <div className="text-teal-400 font-bold uppercase tracking-widest text-[10px] flex items-center gap-2">
@@ -298,9 +400,7 @@ export default function ILOAnalyzerConsole() {
                   </div>
                 </div>
               )}
-              <p className="text-[9px] text-slate-700 mt-2">
-                CDX queries in progress — τ_observed being measured...
-              </p>
+              <p className="text-[9px] text-slate-700">CDX + geo queries in progress...</p>
             </div>
           )}
 
@@ -316,7 +416,6 @@ export default function ILOAnalyzerConsole() {
         <section className="lg:col-span-2">
           {verdict ? (
             <div className="space-y-4">
-
               {/* Verdict header */}
               <div className={`border ${vs.border} ${vs.bg} p-5 rounded flex items-center justify-between gap-4 flex-wrap`}
                    style={{ boxShadow: `0 0 24px ${vs.glow}` }}>
@@ -342,28 +441,28 @@ export default function ILOAnalyzerConsole() {
                 </div>
               </div>
 
+              {/* Quadrant badge */}
+              {verdict.gamma_diagnostics?.quadrant && (
+                <div className={`text-center text-[11px] font-bold tracking-widest py-2 rounded border border-slate-800 ${QUADRANT_STYLE(verdict.gamma_diagnostics.quadrant)}`}>
+                  Π/Γ QUADRANT: {verdict.gamma_diagnostics.quadrant}
+                </div>
+              )}
+
               {/* WTF factor */}
               {verdict.wtf_factor && !verdict.wtf_factor.toLowerCase().includes("no significant") && (
                 <div className="bg-slate-900/50 border border-rose-500/20 border-l-2 border-l-rose-500 rounded p-4">
-                  <span className="block text-[10px] uppercase tracking-widest text-rose-500 mb-1.5">
-                    ⚡ Core Anomaly
-                  </span>
+                  <span className="block text-[10px] uppercase tracking-widest text-rose-500 mb-1.5">⚡ Core Anomaly</span>
                   <p className="text-xs text-slate-300 leading-relaxed">{verdict.wtf_factor}</p>
                 </div>
               )}
 
-              {/* Tab switcher */}
+              {/* Tabs */}
               <div className="flex border-b border-slate-800">
                 {["verdict", "physics"].map((t) => (
-                  <button
-                    key={t}
-                    onClick={() => setTab(t)}
+                  <button key={t} onClick={() => setTab(t)}
                     className={`px-4 py-2 text-[10px] uppercase tracking-widest transition-colors cursor-pointer ${
-                      tab === t
-                        ? "text-teal-400 border-b-2 border-teal-400 -mb-px"
-                        : "text-slate-600 hover:text-slate-400"
-                    }`}
-                  >
+                      tab === t ? "text-teal-400 border-b-2 border-teal-400 -mb-px" : "text-slate-600 hover:text-slate-400"
+                    }`}>
                     {t === "verdict" ? "Verdict Matrix" : "Physics Diagnostics"}
                   </button>
                 ))}
@@ -373,61 +472,49 @@ export default function ILOAnalyzerConsole() {
               {tab === "verdict" && (
                 <div className="space-y-4">
                   <div className="bg-slate-900 border border-slate-800 rounded p-5 space-y-4">
-                    <div className="px-1">
-                      <PiGauge pi={verdict.pi_diagnostics?.pi_final ?? 0} />
+                    <div className="px-1 space-y-3">
+                      <PiBar value={verdict.pi_diagnostics?.pi_final ?? 0} />
+                      <GammaBar value={verdict.gamma_diagnostics?.gamma ?? 0} />
                     </div>
                     <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-slate-800 pb-2">
                       System Parameter Assessment
                     </h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <MetricCard
-                        label="Wildness Profile"
+                      <MetricCard label="Wildness Profile"
                         value={`Tier ${verdict.wildness_tier} // ${verdict.wildness_label}`}
                         detail={verdict.wildness_justification}
-                        accent={WILDNESS_COLOR(verdict.wildness_tier)}
-                      />
-                      <MetricCard
-                        label="Thermodynamic Trend"
+                        accent={WILDNESS_COLOR(verdict.wildness_tier)} />
+                      <MetricCard label="Thermodynamic Trend"
                         value={verdict.pps_assessment}
-                        detail={verdict.pps_justification}
-                      />
-                      <MetricCard
-                        label="Signal Pattern"
+                        detail={verdict.pps_justification} />
+                      <MetricCard label="Signal Pattern"
                         value={verdict.signal_pattern}
                         detail={verdict.signal_justification}
-                        accent="text-slate-200"
-                      />
-                      <MetricCard
-                        label="Local Credibility"
+                        accent="text-slate-200" />
+                      <MetricCard label="Local Credibility"
                         value={verdict.local_credibility}
                         detail={verdict.local_credibility_justification}
                         accent={verdict.local_credibility?.toLowerCase().includes("met") &&
                                 !verdict.local_credibility?.toLowerCase().includes("not")
-                                  ? "text-emerald-400" : "text-rose-400"}
-                      />
-                      <MetricCard
-                        label="Admissibility Bound"
+                                  ? "text-emerald-400" : "text-rose-400"} />
+                      <MetricCard label="Admissibility Bound"
                         value={verdict.admissibility_bound}
-                        detail={verdict.admissibility_justification}
-                      />
-                      <MetricCard
-                        label="Vanish Pattern"
+                        detail={verdict.admissibility_justification} />
+                      <MetricCard label="Vanish Pattern"
                         value={verdict.vanish_pattern}
                         detail={verdict.vanish_justification}
-                        accent="text-slate-300"
-                      />
+                        accent="text-slate-300" />
                     </div>
 
-                    {/* Source matrix */}
                     {verdict.source_analysis && (
                       <div className="border-t border-slate-800 pt-4 space-y-3">
                         <h5 className="text-[10px] uppercase tracking-widest text-slate-500">Source Matrix</h5>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-[10px]">
                           {[
-                            ["Diversity",      verdict.source_analysis.source_diversity],
-                            ["Trajectory",     verdict.source_analysis.coverage_trajectory],
-                            ["Earliest",       verdict.source_analysis.earliest_source_found],
-                            ["Grassroots",     verdict.source_analysis.grassroots_signals],
+                            ["Diversity",  verdict.source_analysis.source_diversity],
+                            ["Trajectory", verdict.source_analysis.coverage_trajectory],
+                            ["Earliest",   verdict.source_analysis.earliest_source_found],
+                            ["Grassroots", verdict.source_analysis.grassroots_signals],
                           ].map(([label, val]) => (
                             <div key={label}>
                               <span className="block text-slate-600 uppercase mb-1">{label}</span>
@@ -438,23 +525,17 @@ export default function ILOAnalyzerConsole() {
                       </div>
                     )}
 
-                    {/* Confirmation path */}
                     {verdict.what_would_confirm && (
                       <div className="border-t border-slate-800 pt-4">
-                        <span className="block text-[10px] uppercase tracking-widest text-slate-600 mb-2">
-                          What Would Confirm
-                        </span>
+                        <span className="block text-[10px] uppercase tracking-widest text-slate-600 mb-2">What Would Confirm</span>
                         <p className="text-xs text-slate-400 leading-relaxed">{verdict.what_would_confirm}</p>
                       </div>
                     )}
                   </div>
 
-                  {/* Anomalous patterns */}
                   {verdict.anomalous_patterns?.length > 0 && (
                     <div className="bg-slate-900/50 border border-amber-500/20 rounded p-4">
-                      <span className="block text-[10px] uppercase tracking-widest text-amber-500 mb-2">
-                        Anomalous Patterns
-                      </span>
+                      <span className="block text-[10px] uppercase tracking-widest text-amber-500 mb-2">Anomalous Patterns</span>
                       <ul className="space-y-1">
                         {verdict.anomalous_patterns.map((p, i) => (
                           <li key={i} className="text-xs text-slate-400 flex items-start gap-2">
@@ -469,10 +550,12 @@ export default function ILOAnalyzerConsole() {
 
               {/* Physics tab */}
               {tab === "physics" && (
-                <PhysicsPanel diag={verdict.pi_diagnostics} />
+                <PhysicsPanel
+                  pi_diag={verdict.pi_diagnostics}
+                  gamma_diag={verdict.gamma_diagnostics}
+                />
               )}
             </div>
-
           ) : (
             <div className="h-full min-h-64 flex flex-col items-center justify-center border border-dashed border-slate-800 rounded p-12 text-center text-slate-600">
               <div className="w-8 h-8 mb-4 opacity-30 border border-slate-600 rounded flex items-center justify-center">
@@ -480,7 +563,7 @@ export default function ILOAnalyzerConsole() {
               </div>
               <p className="text-[11px] uppercase tracking-widest">Awaiting Stream Ingestion Target</p>
               <p className="text-[10px] max-w-xs mt-2 opacity-50 leading-relaxed">
-                Submit a narrative segment to initialize the cascade. CDX temporal measurement active.
+                Submit a narrative segment to initialize the cascade. Π and Γ metrics active.
               </p>
             </div>
           )}
@@ -489,10 +572,10 @@ export default function ILOAnalyzerConsole() {
 
       <footer className="max-w-6xl mx-auto mt-8 pt-4 border-t border-slate-900 flex justify-between items-center flex-wrap gap-2">
         <span className="text-[9px] text-slate-700 uppercase tracking-widest">
-          ChronoDyne Systems · PPS · STOC · Π = τ_obs / τ_pred(S)
+          ChronoDyne Systems · PPS · STOC · Π = τ_obs/τ_pred(S) · Γ = H_geo/H_exp(t)
         </span>
         <span className="text-[9px] text-slate-700 uppercase tracking-widest">
-          CDX · NOAA Baseline · P4 Gate · v4.0.0
+          CDX · NOAA Baseline · P4 Gate · v4.1.0
         </span>
       </footer>
     </div>
