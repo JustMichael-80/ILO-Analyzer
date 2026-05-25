@@ -274,14 +274,50 @@ function PhysicsPanel({ pi_diag, gamma_diag }) {
 }
 
 export default function ILOAnalyzerConsole() {
-  const [claim, setClaim]           = useState("");
-  const [loading, setLoading]       = useState(false);
-  const [phaseIndex, setPhaseIndex] = useState(0);
-  const [runningPi, setRunningPi]   = useState(null);
-  const [verdict, setVerdict]       = useState(null);
-  const [error, setError]           = useState(null);
-  const [tab, setTab]               = useState("verdict");
-  const phaseTimer                  = useRef(null);
+  const [claim, setClaim]             = useState("");
+  const [loading, setLoading]         = useState(false);
+  const [phaseIndex, setPhaseIndex]   = useState(0);
+  const [runningPi, setRunningPi]     = useState(null);
+  const [verdict, setVerdict]         = useState(null);
+  const [error, setError]             = useState(null);
+  const [tab, setTab]                 = useState("verdict");
+  const [reportLoading, setReportLoading] = useState(false);
+  const [report, setReport]           = useState(null);
+  const [reportError, setReportError] = useState(null);
+  const phaseTimer                    = useRef(null);
+
+  const generateReport = async () => {
+    if (!claim.trim() || reportLoading) return;
+    setReportLoading(true);
+    setReportError(null);
+    setReport(null);
+    setTab("report");
+    try {
+      const res = await fetch(`${API_BASE}/report`, {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ claim, fetch_cdx: true }),
+      });
+      if (!res.ok) throw new Error(`Server returned ${res.status}`);
+      const data = await res.json();
+      setReport(data);
+    } catch (err) {
+      setReportError(`Report generation failed: ${err.message}`);
+    } finally {
+      setReportLoading(false);
+    }
+  };
+
+  const downloadReport = () => {
+    if (!report?.markdown) return;
+    const blob = new Blob([report.markdown], { type: "text/markdown" });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href     = url;
+    a.download = `ilo-report-${Date.now()}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const simulatePhases = () => {
     let idx = 0;
@@ -374,6 +410,13 @@ export default function ILOAnalyzerConsole() {
               >
                 {loading ? "Cascading..." : "Execute Triage Sieve"}
               </button>
+              <button
+                onClick={generateReport}
+                disabled={reportLoading || !claim.trim()}
+                className="w-full bg-purple-800 hover:bg-purple-700 disabled:bg-slate-800 disabled:text-slate-600 text-slate-100 font-bold py-2.5 px-4 rounded text-[11px] uppercase tracking-widest transition-colors cursor-pointer"
+              >
+                {reportLoading ? "Generating Report..." : "Generate Analyst Report"}
+              </button>
               <p className="text-[9px] text-slate-700 text-right">⌘+Enter to execute</p>
             </div>
           </div>
@@ -463,12 +506,12 @@ export default function ILOAnalyzerConsole() {
 
               {/* Tabs */}
               <div className="flex border-b border-slate-800">
-                {["verdict", "physics"].map((t) => (
+                {["verdict", "physics", "report"].map((t) => (
                   <button key={t} onClick={() => setTab(t)}
                     className={`px-4 py-2 text-[10px] uppercase tracking-widest transition-colors cursor-pointer ${
                       tab === t ? "text-teal-400 border-b-2 border-teal-400 -mb-px" : "text-slate-600 hover:text-slate-400"
                     }`}>
-                    {t === "verdict" ? "Verdict Matrix" : "Physics Diagnostics"}
+                    {t === "verdict" ? "Verdict Matrix" : t === "physics" ? "Physics Diagnostics" : "Analyst Report"}
                   </button>
                 ))}
               </div>
@@ -560,6 +603,105 @@ export default function ILOAnalyzerConsole() {
                   gamma_diag={verdict.gamma_diagnostics}
                 />
               )}
+
+              {/* Report tab */}
+              {tab === "report" && (
+                <div className="space-y-4">
+                  {reportLoading && (
+                    <div className="border border-purple-500/20 bg-purple-950/10 rounded p-6 text-center space-y-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse mx-auto" />
+                      <p className="text-[10px] uppercase tracking-widest text-purple-400">Gemini Analyst Pass In Progress...</p>
+                      <p className="text-[9px] text-slate-600">Assembling diagnostic report · Pattern hypothesis generation · Investigative guidance</p>
+                    </div>
+                  )}
+                  {reportError && (
+                    <div className="bg-red-950/20 border border-red-500/30 rounded p-4 text-[11px] text-red-400">
+                      <span className="font-bold">[-] REPORT GENERATION FAILED</span>
+                      <p className="mt-1 text-red-500/70">{reportError}</p>
+                    </div>
+                  )}
+                  {report && !reportLoading && (
+                    <div className="space-y-4">
+                      <div className="border border-purple-500/30 bg-purple-950/10 rounded p-5 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] uppercase tracking-widest text-purple-400 font-bold">Analyst Assessment</span>
+                          <span className="text-[9px] text-slate-600">{report.analyst?.campaign_type} · {((report.analyst?.campaign_confidence ?? 0) * 100).toFixed(0)}% confidence</span>
+                        </div>
+                        <p className="text-xs text-slate-300 leading-relaxed">{report.analyst?.executive_summary}</p>
+                        {report.analyst?.actor_profile && (
+                          <p className="text-[10px] text-slate-500 border-t border-slate-800 pt-2">
+                            <span className="text-slate-600 uppercase tracking-wider">Actor Profile: </span>{report.analyst.actor_profile}
+                          </p>
+                        )}
+                      </div>
+                      {report.analyst?.pattern_hypotheses?.length > 0 && (
+                        <div className="border border-slate-800 rounded p-4 space-y-3">
+                          <span className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Pattern Hypotheses</span>
+                          {report.analyst.pattern_hypotheses.map((h, i) => (
+                            <div key={i} className="border border-slate-800/60 rounded p-3 space-y-1">
+                              <div className="flex justify-between items-start gap-2">
+                                <p className="text-xs text-slate-200 font-bold leading-relaxed">{h.hypothesis}</p>
+                                <span className="text-[9px] text-purple-400 font-bold flex-shrink-0">{((h.confidence ?? 0) * 100).toFixed(0)}%</span>
+                              </div>
+                              <p className="text-[9px] text-emerald-600">↑ {h.supporting_evidence}</p>
+                              <p className="text-[9px] text-rose-700">↓ {h.contradicting_evidence}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {report.analyst?.red_flags?.length > 0 && (
+                          <div className="border border-rose-500/20 rounded p-4 space-y-2">
+                            <span className="text-[10px] uppercase tracking-widest text-rose-500 font-bold">Red Flags</span>
+                            <ul className="space-y-1">
+                              {report.analyst.red_flags.map((f, i) => (
+                                <li key={i} className="text-[10px] text-slate-400 flex items-start gap-2"><span className="text-rose-600 mt-0.5">›</span>{f}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {report.analyst?.investigative_next_steps?.length > 0 && (
+                          <div className="border border-amber-500/20 rounded p-4 space-y-2">
+                            <span className="text-[10px] uppercase tracking-widest text-amber-500 font-bold">Next Steps</span>
+                            <ol className="space-y-1">
+                              {report.analyst.investigative_next_steps.map((s, i) => (
+                                <li key={i} className="text-[10px] text-slate-400 flex items-start gap-2"><span className="text-amber-600 flex-shrink-0">{i+1}.</span>{s}</li>
+                              ))}
+                            </ol>
+                          </div>
+                        )}
+                      </div>
+                      {report.analyst?.follow_up_claims?.length > 0 && (
+                        <div className="border border-sky-500/20 rounded p-4 space-y-2">
+                          <span className="text-[10px] uppercase tracking-widest text-sky-500 font-bold">Follow-Up Claims to Test</span>
+                          <ul className="space-y-1">
+                            {report.analyst.follow_up_claims.map((c, i) => (
+                              <li key={i} className="text-[10px] text-slate-400 flex items-start gap-2"><span className="text-sky-600 mt-0.5">›</span>{c}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {report.analyst?.analyst_notes && (
+                        <div className="border border-slate-700/50 rounded p-4">
+                          <span className="block text-[10px] uppercase tracking-widest text-slate-600 mb-2">Analyst Notes</span>
+                          <p className="text-[10px] text-slate-400 leading-relaxed">{report.analyst.analyst_notes}</p>
+                        </div>
+                      )}
+                      <button
+                        onClick={downloadReport}
+                        className="w-full border border-purple-500/30 hover:border-purple-400/60 bg-purple-950/10 hover:bg-purple-950/20 text-purple-400 font-bold py-2.5 px-4 rounded text-[11px] uppercase tracking-widest transition-colors cursor-pointer"
+                      >
+                        Download Full Report (.md)
+                      </button>
+                    </div>
+                  )}
+                  {!report && !reportLoading && !reportError && (
+                    <div className="text-center py-8 text-slate-600 text-[10px] uppercase tracking-widest">
+                      Click "Generate Analyst Report" to run the full investigative analysis.
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
           ) : (
@@ -581,9 +723,10 @@ export default function ILOAnalyzerConsole() {
           ChronoDyne Systems · PPS · STOC · Π = τobs/τpred(S) · Γ = Hgeo/Hexp(t)
         </span>
         <span className="text-[9px] text-slate-700 uppercase tracking-widest">
-          CDX · NOAA Baseline · P4 Gate · v4.1.0
+          CDX · NOAA Baseline · P4 Gate · v4.2.0
         </span>
-        <a href="https://github.com/JustMichael-80/ILO-Analyzer"
+        <a
+          href="https://github.com/JustMichael-80/ILO-Analyzer"
           target="_blank"
           rel="noopener noreferrer"
           className="text-[9px] text-slate-600 hover:text-teal-400 uppercase tracking-widest transition-colors"
