@@ -407,9 +407,10 @@ Do not include conversational markup or preamble."""
                 system_instruction=SYSTEM_PROMPT,
                 temperature=0.05,
                 response_mime_type="application/json",
+                response_schema=PPSVerdict,
             ),
         )
-
+        
         raw = json.loads(response.text)
 
         # ── Step 6: Inject authoritative physics ──────────────────────────────
