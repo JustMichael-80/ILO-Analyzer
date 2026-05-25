@@ -503,3 +503,55 @@ async def purge_cache():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 8000)))
+
+
+# ── Report endpoint ───────────────────────────────────────────────────────────
+
+class ReportRequest(BaseModel):
+    claim:     str  = Field(...,  description="The claim to analyze and report on")
+    fetch_cdx: bool = Field(True, description="Enable Wayback Machine τ_observed measurement")
+
+
+class ReportResponse(BaseModel):
+    claim:    str
+    report:   dict
+    analyst:  dict
+    markdown: str
+
+
+@app.post("/report", response_model=ReportResponse)
+async def generate_full_report(request: ReportRequest):
+    """
+    Full analysis + investigative report with Gemini analyst pass.
+    Runs the complete /analyze pipeline then generates a structured
+    markdown report with pattern hypotheses and investigative guidance.
+    """
+    from report_generator import generate_report
+
+    gemini_key = os.environ.get("GEMINI_API_KEY")
+    tavily_key = os.environ.get("TAVILY_API_KEY")
+
+    if not gemini_key or not tavily_key:
+        raise HTTPException(status_code=500,
+                            detail="Environment configuration missing required credentials.")
+
+    try:
+        # Run full analysis pipeline
+        analysis_request = AnalysisRequest(claim=request.claim, fetch_cdx=request.fetch_cdx)
+        verdict = await execute_triage_sieve(analysis_request)
+        verdict_dict = verdict.model_dump()
+
+        # Generate report with Gemini analyst pass
+        result = await generate_report(request.claim, verdict_dict, gemini_key)
+
+        return ReportResponse(
+            claim=request.claim,
+            report=result["report"],
+            analyst=result["analyst"],
+            markdown=result["markdown"],
+        )
+
+    except Exception as e:
+        import traceback
+        print(f"[ChronoDyne REPORT ERROR] {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"Report generation failed: {str(e)}")
