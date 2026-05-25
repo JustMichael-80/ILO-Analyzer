@@ -9,7 +9,8 @@ Architecture:
   4. Geographic Entropy Γ from source scope distribution → spatial diffusion signal
   5. Π/Γ quadrant assignment — two-dimensional ILO diagnostic space
   6. Weather baseline saddle-point tracker (NOAA/open-meteo λ reference)
-  7. Gemini P4 Gate verdict with full diagnostic context injection
+  7. Gemini P4 Gate verdict synthesis (GeminiVerdict schema — no dict fields)
+  8. Authoritative physics injection post-synthesis
 
 Version: 4.1.0
 """
@@ -86,18 +87,6 @@ class SaddlePoint(BaseModel):
     baseline_source: str
 
 
-class GammaDiagnostics(BaseModel):
-    gamma:                float
-    h_geographic:         float
-    h_expected:           float
-    scope_distribution:   dict
-    country_distribution: dict
-    max_scope_rank:       int
-    diffusion_velocity:   str
-    quadrant:             str
-    gamma_interpretation: str
-
-
 class PiDiagnostics(BaseModel):
     pi_final:           float
     tau_observed_days:  float
@@ -112,8 +101,21 @@ class PiDiagnostics(BaseModel):
     saddle_point:       SaddlePoint
 
 
-class PPSVerdict(BaseModel):
-    # Taxonomy fields (P4 Gate enforced)
+class GammaDiagnostics(BaseModel):
+    gamma:                float
+    h_geographic:         float
+    h_expected:           float
+    scope_distribution:   dict
+    country_distribution: dict
+    max_scope_rank:       int
+    diffusion_velocity:   str
+    quadrant:             str
+    gamma_interpretation: str
+
+
+# Slim schema for Gemini — excludes dict fields (additionalProperties not supported
+# in Gemini Developer API mode). Physics diagnostics injected authoritatively post-synthesis.
+class GeminiVerdict(BaseModel):
     wildness_tier:                   int
     wildness_label:                  str
     wildness_justification:          str
@@ -136,9 +138,32 @@ class PPSVerdict(BaseModel):
     what_would_confirm:              str
     wtf_factor:                      str
 
-    # Physics diagnostics (computed, not LLM-generated)
-    pi_diagnostics:    PiDiagnostics
-    gamma_diagnostics: GammaDiagnostics
+
+# Full response model — GeminiVerdict fields + authoritative physics blocks
+class PPSVerdict(BaseModel):
+    wildness_tier:                   int
+    wildness_label:                  str
+    wildness_justification:          str
+    signal_pattern:                  str
+    signal_justification:            str
+    pps_assessment:                  str
+    pps_justification:               str
+    local_credibility:               str
+    local_credibility_justification: str
+    admissibility_bound:             str
+    admissibility_justification:     str
+    vanish_pattern:                  str
+    vanish_justification:            str
+    suppression_signals:             List[str]
+    anomalous_patterns:              List[str]
+    source_analysis:                 SourceMatrix
+    ilo_probability:                 float
+    verdict:                         str
+    verdict_summary:                 str
+    what_would_confirm:              str
+    wtf_factor:                      str
+    pi_diagnostics:                  PiDiagnostics
+    gamma_diagnostics:               GammaDiagnostics
 
 
 # ── System prompt ─────────────────────────────────────────────────────────────
@@ -176,28 +201,28 @@ TAXONOMY INTEGRITY PROTOCOL — use ONLY these exact values:
 
 PHYSICS INTEGRATION RULES:
 Π rules:
-- Π < 0.35:         weight toward ILO Fade / Confirmed ILO Pattern
-- Π 0.70–1.40:      weight toward Clean Signal / True Signal
-- Π > 2.50:         weight toward artificial maintenance / bot-sustained narrative
+- Π < 0.35:       weight toward ILO Fade / Confirmed ILO Pattern
+- Π 0.70-1.40:    weight toward Clean Signal / True Signal
+- Π > 2.50:       weight toward artificial maintenance / bot-sustained narrative
 
 Γ rules:
-- Γ > 1.40:         geographic injection signal — narrative spread faster/more uniformly than natural diffusion predicts
-- Γ 0.70–1.40:      organic geographic diffusion
-- Γ < 0.70:         suppression signal — narrative geographically contained below prediction
+- Γ > 1.40:       geographic injection signal
+- Γ 0.70-1.40:    organic geographic diffusion
+- Γ < 0.70:       suppression signal
 - diffusion_velocity = fast_injection:   corroborates coordinated ILO
 - diffusion_velocity = slow_suppression: corroborates suppression verdict
 
 Quadrant rules:
-- Quadrant I (Π high, Γ high):   Confirmed ILO — artificially injected AND maintained
-- Quadrant II (Π high, Γ low):   Astroturfed local — manufactured but geographically contained
-- Quadrant III (Π low, Γ high):  Viral suppression — spreading fast but dying artificially
-- Quadrant IV (Π low, Γ low):    Suppressed real event — neither persisting nor diffusing
+- Quadrant I (Π high, Γ high):  Confirmed ILO
+- Quadrant II (Π high, Γ low):  Astroturfed local
+- Quadrant III (Π low, Γ high): Viral suppression
+- Quadrant IV (Π low, Γ low):   Suppressed real event
 
 Other rules:
 - saddle = ilo_fade:     corroborates ILO verdict
 - saddle = maintained:   corroborates artificial maintenance
 - inverted_signal > 2.0: flag Class D amplification as anomalous pattern
-- class_a_count = 0:     local_credibility → 'Threshold Not Met'
+- class_a_count = 0:     local_credibility -> 'Threshold Not Met'
 - class_d_count > class_a_count + class_b_count: strong ILO distribution signature
 
 SUPPRESSION LOGIC: Π very low + no debunking trail = weight toward 'Possible Suppression'.
@@ -354,8 +379,6 @@ async def execute_triage_sieve(request: AnalysisRequest):
             results,
             tau_observed_days=pi_result.tau_observed_days
         )
-
-        # Assign Π/Γ quadrant
         quadrant = assign_quadrant(pi_result.pi, gamma_result.gamma)
         gamma_result.quadrant = quadrant
 
@@ -364,25 +387,25 @@ async def execute_triage_sieve(request: AnalysisRequest):
         source_ctx = _build_source_matrix_context(results)
 
         physics_block = {
-            "pi":                 pi_result.pi,
-            "tau_observed_days":  pi_result.tau_observed_days,
-            "tau_predicted_days": pi_result.tau_predicted_days,
-            "S":                  pi_result.S,
-            "E":                  pi_result.E,
-            "node_count":         pi_result.node_count,
-            "class_a_count":      pi_result.class_a_count,
-            "class_d_count":      pi_result.class_d_count,
-            "inverted_signal":    pi_result.inverted_signal,
-            "pi_interpretation":  pi_result.pi_interpretation,
-            "saddle_point":       pi_result.saddle_point,
-            "gamma":                  gamma_result.gamma,
-            "h_geographic":           gamma_result.h_geographic,
-            "h_expected":             gamma_result.h_expected,
-            "scope_distribution":     gamma_result.scope_distribution,
-            "country_distribution":   gamma_result.country_distribution,
-            "diffusion_velocity":     gamma_result.diffusion_velocity,
-            "quadrant":               quadrant,
-            "gamma_interpretation":   gamma_result.gamma_interpretation,
+            "pi":                pi_result.pi,
+            "tau_observed_days": pi_result.tau_observed_days,
+            "tau_predicted_days":pi_result.tau_predicted_days,
+            "S":                 pi_result.S,
+            "E":                 pi_result.E,
+            "node_count":        pi_result.node_count,
+            "class_a_count":     pi_result.class_a_count,
+            "class_d_count":     pi_result.class_d_count,
+            "inverted_signal":   pi_result.inverted_signal,
+            "pi_interpretation": pi_result.pi_interpretation,
+            "saddle_point":      pi_result.saddle_point,
+            "gamma":             gamma_result.gamma,
+            "h_geographic":      gamma_result.h_geographic,
+            "h_expected":        gamma_result.h_expected,
+            "scope_distribution":gamma_result.scope_distribution,
+            "country_distribution":gamma_result.country_distribution,
+            "diffusion_velocity":gamma_result.diffusion_velocity,
+            "quadrant":          quadrant,
+            "gamma_interpretation":gamma_result.gamma_interpretation,
         }
 
         user_prompt = f"""Claim under analysis: "{request.claim}"
@@ -399,7 +422,9 @@ async def execute_triage_sieve(request: AnalysisRequest):
 Synthesize the above into a structured verdict. Populate all schema fields.
 Do not include conversational markup or preamble."""
 
-        # ── Step 5: P4 Gate ───────────────────────────────────────────────────
+        # ── Step 5: P4 Gate — Gemini verdict synthesis ────────────────────────
+        # GeminiVerdict excludes dict fields (additionalProperties unsupported
+        # in Gemini Developer API mode). Physics blocks injected post-synthesis.
         response = ai.models.generate_content(
             model="gemini-2.5-flash",
             contents=user_prompt,
@@ -407,13 +432,13 @@ Do not include conversational markup or preamble."""
                 system_instruction=SYSTEM_PROMPT,
                 temperature=0.05,
                 response_mime_type="application/json",
-                response_schema=PPSVerdict,
+                response_schema=GeminiVerdict,
             ),
         )
-        
+
         raw = json.loads(response.text)
 
-        # ── Step 6: Inject authoritative physics ──────────────────────────────
+        # ── Step 6: Inject authoritative physics blocks ───────────────────────
         saddle = pi_result.saddle_point
         pi_diagnostics = PiDiagnostics(
             pi_final=pi_result.pi,
