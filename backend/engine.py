@@ -37,6 +37,7 @@ from bias_table import classify_domain, NODE_CLASS_D, NODE_CLASS_A, NODE_CLASS_B
 from pi_calculator import compute_pi, PiResult
 from gamma_calculator import compute_gamma, assign_quadrant, GammaResult
 from report_generator import generate_report
+from signature_library import match_against_library, LibraryResult
 
 
 # ── Startup ───────────────────────────────────────────────────────────────────
@@ -165,6 +166,7 @@ class PPSVerdict(BaseModel):
     wtf_factor:                      str
     pi_diagnostics:                  PiDiagnostics
     gamma_diagnostics:               GammaDiagnostics
+    signature_result:                Optional[dict] = None
 
 
 # ── System prompt ─────────────────────────────────────────────────────────────
@@ -383,7 +385,10 @@ async def execute_triage_sieve(request: AnalysisRequest):
         quadrant = assign_quadrant(pi_result.pi, gamma_result.gamma)
         gamma_result.quadrant = quadrant
 
-        # ── Step 4: Build P4 Gate context ─────────────────────────────────────
+        # ── Step 4: Signature library scan ───────────────────────────────────────
+        library_result = match_against_library(pi_result, gamma_result)
+
+        # ── Step 5: Build P4 Gate context ─────────────────────────────────────
         compressed = _compress(results)
         source_ctx = _build_source_matrix_context(results)
 
@@ -475,6 +480,30 @@ Do not include conversational markup or preamble."""
 
         raw["pi_diagnostics"]    = pi_diagnostics.model_dump()
         raw["gamma_diagnostics"] = gamma_diagnostics.model_dump()
+        raw["signature_result"]  = {                                    # ← insert here
+            "best_similarity":        library_result.best_similarity,
+            "campaign_family":        library_result.campaign_family,
+            "library_interpretation": library_result.library_interpretation,
+            "matches": [
+                {
+                    "benchmark_id":  m.benchmark_id,
+                    "campaign_type": m.campaign_type,
+                    "quadrant":      m.quadrant,
+                    "similarity":    m.similarity,
+                    "match_tier":    m.match_tier,
+                    "description":   m.description,
+                }
+                for m in library_result.matches
+            ],
+            "best_match": {
+                "benchmark_id":  library_result.best_match.benchmark_id,
+                "campaign_type": library_result.best_match.campaign_type,
+                "quadrant":      library_result.best_match.quadrant,
+                "similarity":    library_result.best_match.similarity,
+                "match_tier":    library_result.best_match.match_tier,
+                "description":   library_result.best_match.description,
+            } if library_result.best_match else None,
+        }
         return PPSVerdict(**raw)
 
     except json.JSONDecodeError as e:
