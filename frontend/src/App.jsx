@@ -8,6 +8,7 @@ const PHASES = [
   { label: "Phase 3 // Deep archive cascade",            plain: "Searching web archives for history" },
   { label: "Phase 4 // Debunking cross-reference",       plain: "Cross-referencing fact-checks" },
   { label: "Phase 5 // Institutional corroboration",     plain: "Checking academic & institutional sources" },
+  { label: "Phase 6 // Declassified document archaeology", plain: "Searching FOIA archives & declassified records" },
 ];
 
 // ── Info popup content ────────────────────────────────────────────────────────
