@@ -281,26 +281,25 @@ def _compress(results: list) -> list:
 
 
 def execute_search_cascade(claim: str, tavily: TavilyClient) -> list:
+    cache_key = f"cascade:{claim.strip().lower()[:200]}"
+    cached = cache.get("tavily", cache_key)
+    if cached is not None:
+        return cached
+
     accumulated: list = []
     seen_urls:   set  = set()
-    cache_store: dict = {}
 
     for idx, phase in enumerate(SEARCH_PHASES, 1):
         query     = f'"{claim}" {phase["query_suffix"]}'
         depth     = phase["depth"]
         max_r     = phase["max"]
-        cache_key = f"tavily:{query}:{depth}:{max_r}"
 
-        if cache_key in cache_store:
-            phase_data = cache_store[cache_key]
-        else:
-            try:
-                res        = tavily.search(query=query, max_results=max_r,
-                                           include_answer=False, search_depth=depth)
-                phase_data = res.get("results", [])
-                cache_store[cache_key] = phase_data
-            except Exception:
-                phase_data = []
+        try:
+            res        = tavily.search(query=query, max_results=max_r,
+                                       include_answer=False, search_depth=depth)
+            phase_data = res.get("results", [])
+        except Exception:
+            phase_data = []
 
         filtered = _filter_results(phase_data)
         for item in filtered:
@@ -316,6 +315,7 @@ def execute_search_cascade(claim: str, tavily: TavilyClient) -> list:
             if class_d_count == len(accumulated) and len(accumulated) > 0:
                 break
 
+    cache.set("tavily", cache_key, accumulated)
     return accumulated
 
 
