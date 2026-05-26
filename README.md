@@ -1,4 +1,4 @@
-# ChronoDyne Systems, Inc. // ILO Analyzer v4.1
+# ChronoDyne Systems, Inc. // ILO Analyzer v4.2
 
 An automated, cloud-isolated information triage engine built to identify and map Engineered Information Laundering Operations (ILOs). This architecture bypasses surface-level text classification by measuring the **thermodynamic footprint of data propagation** directly — computing whether a narrative is persisting naturally or being artificially sustained against entropic decay, across both temporal and geographic dimensions simultaneously.
 
@@ -103,13 +103,31 @@ Source URLs are queried against the Wayback Machine CDX API to extract τ_observ
 
 The full physics block — Π, Γ, quadrant, τ_observed, τ_predicted, S, E, node classification, saddle-point deviation, geographic scope distribution — is computed deterministically and injected into the P4 Gate as ground truth. Gemini synthesizes a structured verdict from the physics block and qualitative source content. The LLM does not compute Π or Γ and cannot override either.
 
+### Analyst Report (Gemini Analyst Pass)
+
+A second, separate Gemini pass at higher temperature reasons over the compiled physics report as an investigative analyst — generating pattern hypotheses with confidence scores, actor profiling, red flags, investigative next steps, and follow-up claims to test. The physics block constrains the hallucination space; the analyst reasons over verified measurements, not raw search results. Output is a downloadable markdown intelligence document.
+
+### MCP Interface (AI Agent Integration)
+
+An MCP server exposes the analyzer as a native tool for any MCP-compatible AI agent. Dual-mode:
+- **Hosted mode** — routes to the live API, zero setup required
+- **Local mode** — runs the engine with the user's own API keys, claims never leave their machine
+
 ---
 
 ## Empirical Demonstration
 
-First live test conducted May 24, 2026:
+Three live tests conducted May 24–25, 2026:
 
-**Claim:** *"Israeli Intelligence was behind the JFK assassination in retaliation for not approving Dimona."*
+| Claim | Π | Γ | Quadrant | ILO % |
+|-------|---|---|----------|-------|
+| JFK/Israeli Intelligence/Dimona | 41.91 | — | I — Confirmed ILO | 95% |
+| Podesta is Chester Bennington's father | 0.0 | 5.0 | III — Viral Suppression | 95% |
+| GPT-4.0 is AGI | 25.10 | 0.46 | II — Astroturfed Local | 85% |
+
+Three different claims. Three different quadrants. Three different actor signatures. All from physics.
+
+**First test detail — JFK/Dimona claim:**
 
 | Metric | Value |
 |--------|-------|
@@ -125,7 +143,7 @@ First live test conducted May 24, 2026:
 | Verdict | **Confirmed ILO Pattern** |
 | ILO Probability | 95% |
 
-**Interpretation:** The narrative has persisted 42× longer than STOC predicts for a natural information structure of its complexity. The observed decay constant (λ = 0.0001/day) deviates from the NOAA atmospheric baseline (λ = 0.12/day) by Δ = 0.9993 — indicating the narrative is being actively held above its natural decay threshold. Class A sources provide historical context but do not support the assassination claim. Class D sources actively propagate it.
+The narrative has persisted 42× longer than STOC predicts. The observed decay constant deviates from the NOAA atmospheric baseline by Δ = 0.9993 — indicating active artificial maintenance above the natural decay threshold.
 
 ---
 
@@ -150,6 +168,7 @@ First live test conducted May 24, 2026:
 | API Base | https://ilo-analyzer.onrender.com |
 | API Docs | https://ilo-analyzer.onrender.com/docs |
 | Source | https://github.com/JustMichael-80/ILO-Analyzer |
+| Discussions | https://github.com/JustMichael-80/ILO-Analyzer/discussions |
 
 **Request schema:**
 ```json
@@ -160,6 +179,32 @@ First live test conducted May 24, 2026:
 ```
 
 Setting `fetch_cdx: false` skips Wayback Machine temporal measurement for faster results (Π will reflect citation graph structure only, without τ_observed; Γ still computes from source scope distribution).
+
+**Note on API keys:** The hosted endpoint runs on free tier infrastructure with shared keys. For full speed, privacy, and no rate limits, run locally with your own Gemini and Tavily keys — both have generous free tiers. See setup instructions in the MCP section of the docs.
+
+---
+
+## Roadmap
+
+The following modules are in active development. Each extends the existing architecture without replacing it — the analyst report is the delivery surface for all downstream additions.
+
+**v4.3 — ILO Signature Library**
+Cosine similarity matching against a reference library of known ILO campaign vectors — Russian IRA, Spamouflage, domestic astroturfing archetypes, and others sourced from Twitter/Meta/Stanford Internet Observatory public datasets. Output: "most similar known campaign" with confidence score, added as a report section.
+
+**v4.4 — Geolocation Map**
+World map visualization of source node geographic distribution, color-coded by Class A/B/C/D, with edge weight rendering. Makes Γ tangible for non-technical audiences and visually surfaces coordinated injection patterns. Toggle overlay for known state-actor geographic footprints.
+
+**v4.5 — State-Actor Correlation**
+Similarity scoring against known state-linked IO geographic and behavioral fingerprints. When a narrative's country distribution and Π/Γ signature matches a known actor's historical campaigns, flag it with confidence rating. Legal review before public release.
+
+**v4.6 — Multi-Timescale Tracking**
+Longitudinal monitoring mode — run the analyzer repeatedly on a claim over time and track how Π and Γ evolve. Natural stories show rise → peak → logarithmic fade. Manufactured ones show plateaus, secondary injections, or artificial floors. Turns the snapshot tool into a continuous monitoring instrument.
+
+**v4.7 — Early-Stage Detection**
+Watchdog mode for emerging local claims. Monitor Π deviation before national media picks up a story. A genuine threshold cross would show predicted vs observed persistence aligning as coverage broadens organically. Flag anomalous early-stage injection before it consolidates.
+
+**v4.8 — CLEO Integration**
+Network instance support for CLEO (Constructal Law Evolutionary Optimizer) continual learning architecture. Cross-claim campaign memory, adaptive threshold calibration from empirical results, predictive routing to high-signal cascade phases. Turns per-claim detection into campaign-level pattern recognition across continuous sessions.
 
 ---
 
@@ -180,7 +225,7 @@ A 30-claim validation dataset is in active development:
 - **15 known ILOs** — documented disinformation campaigns across multiple categories
 - **15 known clean signals** — verified organic events with documented factual records
 
-Target metrics: Π clustering near 1.0 for clean signals, Quadrant I/II placement for confirmed ILOs. Results will be used to calibrate α, β, and τ_diffusion empirically.
+Target metrics: Π clustering near 1.0 for clean signals, Quadrant I/II placement for confirmed ILOs. Results will be used to calibrate α, β, and τ_diffusion empirically. Community contributions welcome — see Discussions.
 
 ---
 
@@ -188,18 +233,21 @@ Target metrics: Π clustering near 1.0 for clean signals, Quadrant I/II placemen
 
 ```
 ├── backend/
-│   ├── engine.py              # FastAPI P4 Gate — search cascade, verdict synthesis
-│   ├── pi_calculator.py       # STOC-derived Π computation from citation graph
-│   ├── gamma_calculator.py    # Geographic Entropy Γ + Π/Γ quadrant assignment
-│   ├── bias_table.py          # Class A/B/C/D classification, trust weights, geo tags
-│   ├── cdx.py                 # Wayback Machine CDX API — τ_observed measurement
-│   ├── weather_baseline.py    # NOAA/open-meteo λ_weather reference curve
-│   ├── cache.py               # SQLite TTL cache (CDX: 7d, bias: 30d, weather: 1d)
+│   ├── engine.py               # FastAPI P4 Gate — search cascade, verdict synthesis
+│   ├── pi_calculator.py        # STOC-derived Π computation from citation graph
+│   ├── gamma_calculator.py     # Geographic Entropy Γ + Π/Γ quadrant assignment
+│   ├── bias_table.py           # Class A/B/C/D classification, trust weights, geo tags
+│   ├── cdx.py                  # Wayback Machine CDX API — τ_observed measurement
+│   ├── weather_baseline.py     # NOAA/open-meteo λ_weather reference curve
+│   ├── cache.py                # SQLite TTL cache (CDX: 7d, bias: 30d, weather: 1d)
+│   ├── report_generator.py     # Two-stage analyst report — deterministic + Gemini pass
+│   ├── mcp_server.py           # MCP interface — hosted and local mode
+│   ├── mcp_config_example.json # Claude Desktop configuration examples
 │   └── requirements.txt
 └── frontend/
     └── src/
-        └── App.jsx            # React/Vite/Tailwind dashboard with Π bar, Γ bar,
-                               # quadrant map, and Physics Diagnostics tab
+        └── App.jsx             # React/Vite/Tailwind dashboard — Verdict Matrix,
+                                # Physics Diagnostics, Analyst Report tabs
 ```
 
 ---
@@ -214,7 +262,7 @@ This architecture is an implementation milestone for ChronoDyne Systems, Inc. Th
 
 ## Citation
 
-Stewart, M. *The Fractal Information Iteration Hypothesis: Supplementing Breit–Wheeler Ignition in Conformal Cyclic Cosmology.* Figshare, 2026. https://doi.org/10.6084/m9.figshare.32307087
+Stewart, M. *The Principle of Persistent Structurization.* CLC2026 Extended Abstract, Figshare, 2026. https://doi.org/10.6084/m9.figshare.32307087
 
 ---
 
