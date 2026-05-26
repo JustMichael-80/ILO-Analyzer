@@ -237,11 +237,12 @@ Output ONLY the JSON verdict object."""
 # ── Search cascade ────────────────────────────────────────────────────────────
 
 SEARCH_PHASES = [
-    {"query_suffix": "primary source reports",                    "depth": "basic",    "max": 3},
-    {"query_suffix": "local news reports journalism",              "depth": "basic",    "max": 3},
-    {"query_suffix": "local archives timeline historical",         "depth": "advanced", "max": 5},
-    {"query_suffix": "debunked verified factual truth",            "depth": "basic",    "max": 3},
-    {"query_suffix": "study research institutional corroboration", "depth": "basic",    "max": 3},
+    {"query_suffix": "primary source reports",                                                    "depth": "basic",    "max": 3},
+    {"query_suffix": "local news reports journalism",                                              "depth": "basic",    "max": 3},
+    {"query_suffix": "local archives timeline historical",                                         "depth": "advanced", "max": 5},
+    {"query_suffix": "debunked verified factual truth",                                            "depth": "basic",    "max": 3},
+    {"query_suffix": "study research institutional corroboration",                                 "depth": "basic",    "max": 3},
+    {"query_suffix": "declassified FOIA government document official archive record",              "depth": "advanced", "max": 4},
 ]
 
 
