@@ -97,6 +97,44 @@ BIAS_TABLE: dict[str, SourceRecord] = {
     "courtlistener.com":  SourceRecord("courtlistener.com",   NODE_CLASS_A, 0.0,  0.95, 0.02, "Court records",                    geo_scope="national",      country="US"),
     "pacer.gov":          SourceRecord("pacer.gov",           NODE_CLASS_A, 0.0,  0.97, 0.01, "Federal court",                    geo_scope="national",      country="US"),
     "congress.gov":       SourceRecord("congress.gov",        NODE_CLASS_A, 0.0,  0.95, 0.02,                                     geo_scope="national",      country="US"),
+    # ── New CLASS A entries for bias_table.py ─────────────────────────────────────
+    # Add these inside the BIAS_TABLE dict, under the existing government & institutional
+    # section (after the "pacer.gov", "congress.gov", "noaa.gov" entries).
+    #
+    # These are declassified document repositories and FOIA archives — primary source
+    # archaeology targets. Their presence in a citation graph is high-signal:
+    # a maintained narrative that also has Class A FOIA sourcing is a fundamentally
+    # different diagnostic from one with zero primary sources.
+
+    # Declassified / FOIA repositories
+    "ntis.gov":           SourceRecord("ntis.gov",           NODE_CLASS_A, 0.0,  0.93, 0.04, "NTIS declassified technical reports",      geo_scope="national",      country="US"),
+    "archives.gov":       SourceRecord("archives.gov",       NODE_CLASS_A, 0.0,  0.97, 0.02, "National Archives — primary records",      geo_scope="national",      country="US"),
+    "catalog.archives.gov": SourceRecord("catalog.archives.gov", NODE_CLASS_A, 0.0, 0.97, 0.02, "National Archives catalog",             geo_scope="national",      country="US"),
+    "vault.fbi.gov":      SourceRecord("vault.fbi.gov",      NODE_CLASS_A, 0.0,  0.90, 0.06, "FBI FOIA vault",                           geo_scope="national",      country="US"),
+    "cia.gov":            SourceRecord("cia.gov",            NODE_CLASS_A, 0.0,  0.85, 0.10, "CIA CREST reading room — use with caution",geo_scope="national",      country="US"),
+    "dod.gov":            SourceRecord("dod.gov",            NODE_CLASS_A, 0.0,  0.88, 0.08, "DoD official releases",                    geo_scope="national",      country="US"),
+    "defense.gov":        SourceRecord("defense.gov",        NODE_CLASS_A, 0.0,  0.88, 0.08, "DoD public affairs",                       geo_scope="national",      country="US"),
+    "dtic.mil":           SourceRecord("dtic.mil",           NODE_CLASS_A, 0.0,  0.92, 0.05, "Defense Technical Information Center",     geo_scope="national",      country="US"),
+    "gao.gov":            SourceRecord("gao.gov",            NODE_CLASS_A, 0.0,  0.96, 0.02, "Government Accountability Office",         geo_scope="national",      country="US"),
+    "govinfo.gov":        SourceRecord("govinfo.gov",        NODE_CLASS_A, 0.0,  0.96, 0.02, "GPO — official federal publications",      geo_scope="national",      country="US"),
+    "federalregister.gov":SourceRecord("federalregister.gov",NODE_CLASS_A, 0.0,  0.97, 0.01, "Federal Register — regulatory record",     geo_scope="national",      country="US"),
+    "regulations.gov":    SourceRecord("regulations.gov",    NODE_CLASS_A, 0.0,  0.94, 0.03, "Federal rulemaking docket",                geo_scope="national",      country="US"),
+    "nsa.gov":            SourceRecord("nsa.gov",            NODE_CLASS_A, 0.0,  0.82, 0.12, "NSA declassified releases",                geo_scope="national",      country="US"),
+    "state.gov":          SourceRecord("state.gov",          NODE_CLASS_A, 0.0,  0.87, 0.09, "State Dept — diplomatic record",           geo_scope="national",      country="US"),
+    "history.state.gov":  SourceRecord("history.state.gov",  NODE_CLASS_A, 0.0,  0.94, 0.03, "State Dept historical documents",          geo_scope="national",      country="US"),
+    "energy.gov":         SourceRecord("energy.gov",         NODE_CLASS_A, 0.0,  0.92, 0.04, "Dept of Energy — includes nuclear history",geo_scope="national",      country="US"),
+    "osti.gov":           SourceRecord("osti.gov",           NODE_CLASS_A, 0.0,  0.94, 0.03, "DOE Office of Scientific & Technical Info",geo_scope="national",      country="US"),
+
+    # International equivalents
+    "nationalarchives.gov.uk": SourceRecord("nationalarchives.gov.uk", NODE_CLASS_A, 0.0, 0.96, 0.02, "UK National Archives",            geo_scope="national",      country="GB"),
+    "aph.gov.au":         SourceRecord("aph.gov.au",         NODE_CLASS_A, 0.0,  0.93, 0.03, "Australian Parliament",                    geo_scope="national",      country="AU"),
+    "europarl.europa.eu": SourceRecord("europarl.europa.eu", NODE_CLASS_A, 0.0,  0.88, 0.07, "European Parliament records",              geo_scope="international", country="intl"),
+
+    # Academic/institutional additions with primary source value
+    "foreignaffairs.com": SourceRecord("foreignaffairs.com", NODE_CLASS_B, -0.10, 0.82, 0.12, "CFR journal — establishment foreign policy",geo_scope="international",country="US"),
+    "rand.org":           SourceRecord("rand.org",           NODE_CLASS_B,  0.05, 0.80, 0.14, "RAND Corporation — DoD-adjacent research",  geo_scope="national",     country="US"),
+    "sipri.org":          SourceRecord("sipri.org",          NODE_CLASS_A,  0.0,  0.88, 0.07, "Stockholm Intl Peace Research Institute",   geo_scope="international", country="intl"),
+    "icij.org":           SourceRecord("icij.org",           NODE_CLASS_B, -0.05, 0.84, 0.12, "Intl Consortium of Investigative Journalists",geo_scope="international",country="intl"),
     "noaa.gov":           SourceRecord("noaa.gov",            NODE_CLASS_A, 0.0,  0.97, 0.01, "Weather baseline source",          geo_scope="national",      country="US"),
     "nasa.gov":           SourceRecord("nasa.gov",            NODE_CLASS_A, 0.0,  0.96, 0.02,                                     geo_scope="national",      country="US"),
     "who.int":            SourceRecord("who.int",             NODE_CLASS_A, 0.0,  0.88, 0.08, "International body",               geo_scope="global",        country="intl"),
