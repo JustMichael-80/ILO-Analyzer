@@ -167,6 +167,7 @@ class PPSVerdict(BaseModel):
     pi_diagnostics:                  PiDiagnostics
     gamma_diagnostics:               GammaDiagnostics
     signature_result:                Optional[dict] = None
+    source_nodes:                    Optional[List[dict]] = None
 
 
 # ── System prompt ─────────────────────────────────────────────────────────────
@@ -505,6 +506,7 @@ Do not include conversational markup or preamble."""
                 "description":   library_result.best_match.description,
             } if library_result.best_match else None,
         }
+        raw["source_nodes"]      = pi_result.node_details
         return PPSVerdict(**raw)
 
     except json.JSONDecodeError as e:
