@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import * as THREE from "three";
 
 const API_BASE = "https://ilo-analyzer.onrender.com";
 
@@ -627,6 +628,349 @@ function PhysicsPanel({ pi_diag, gamma_diag, signatureResult }) {
   );
 }
 
+// ── Country centroids (ISO → lat/lon) ────────────────────────────────────────
+
+const COUNTRY_COORDS = {
+  US: [37.09, -95.71], GB: [55.37, -3.44], FR: [46.23, 2.21],
+  DE: [51.17, 10.45],  CN: [35.86, 104.19], RU: [61.52, 105.32],
+  AU: [-25.27, 133.78], CA: [56.13, -106.35], JP: [36.20, 138.25],
+  IN: [20.59, 78.96],  BR: [14.24, -51.93],  ZA: [-28.47, 24.68],
+  IL: [31.05, 34.85],  UA: [48.38, 31.17],   KR: [35.91, 127.77],
+  SA: [23.89, 45.08],  MX: [23.63, -102.55], NG: [9.08, 8.68],
+  AR: [-38.42, -63.62], EG: [26.82, 30.80],  intl: [20, 0],
+  unknown: null,
+};
+
+function latLonToXYZ(lat, lon, r = 1) {
+  const phi   = (90 - lat)  * (Math.PI / 180);
+  const theta = (lon + 180) * (Math.PI / 180);
+  return [
+    -(r * Math.sin(phi) * Math.cos(theta)),
+     (r * Math.cos(phi)),
+     (r * Math.sin(phi) * Math.sin(theta)),
+  ];
+}
+
+// ── XCOM Globe Panel ──────────────────────────────────────────────────────────
+
+function GlobePanel({ nodes }) {
+  const mountRef    = useRef(null);
+  const sceneRef    = useRef(null);
+  const rendRef     = useRef(null);
+  const camRef      = useRef(null);
+  const globeRef    = useRef(null);
+  const frameRef    = useRef(null);
+  const isDragging  = useRef(false);
+  const lastMouse   = useRef({ x: 0, y: 0 });
+  const rotVel      = useRef({ x: 0, y: 0 });
+  const [selected, setSelected]   = useState(null);
+  const [hoveredIdx, setHoveredIdx] = useState(null);
+
+  const CLASS_COLOR = { A: 0x34d399, B: 0x38bdf8, C: 0xfbbf24, D: 0xf43f5e };
+  const CLASS_HEX   = { A: "#34d399", B: "#38bdf8", C: "#fbbf24", D: "#f43f5e" };
+
+  useEffect(() => {
+    if (!mountRef.current) return;
+    const W = mountRef.current.clientWidth;
+    const H = mountRef.current.clientHeight || 420;
+
+    // Scene
+    const scene    = new THREE.Scene();
+    sceneRef.current = scene;
+
+    // Camera
+    const cam = new THREE.PerspectiveCamera(45, W / H, 0.1, 100);
+    cam.position.set(0, 0, 2.8);
+    camRef.current = cam;
+
+    // Renderer
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(W, H);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setClearColor(0x000000, 0);
+    mountRef.current.appendChild(renderer.domElement);
+    rendRef.current = renderer;
+
+    // Starfield
+    const starGeo = new THREE.BufferGeometry();
+    const starVerts = [];
+    for (let i = 0; i < 2000; i++) {
+      starVerts.push((Math.random() - 0.5) * 80, (Math.random() - 0.5) * 80, (Math.random() - 0.5) * 80);
+    }
+    starGeo.setAttribute("position", new THREE.Float32BufferAttribute(starVerts, 3));
+    scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0x334155, size: 0.08 })));
+
+    // Globe
+    const globeGeo  = new THREE.SphereGeometry(1, 64, 64);
+    const globeMat  = new THREE.MeshPhongMaterial({
+      color: 0x0a1628, emissive: 0x0d2137, specular: 0x1e3a5f,
+      shininess: 15, transparent: true, opacity: 0.97,
+    });
+    const globe = new THREE.Mesh(globeGeo, globeMat);
+    globeRef.current = globe;
+    scene.add(globe);
+
+    // Grid lines (lat/lon)
+    const gridMat = new THREE.LineBasicMaterial({ color: 0x1e3a5f, transparent: true, opacity: 0.35 });
+    for (let lat = -75; lat <= 75; lat += 15) {
+      const pts = [];
+      for (let lon = 0; lon <= 360; lon += 3) {
+        const [x, y, z] = latLonToXYZ(lat, lon - 180, 1.001);
+        pts.push(new THREE.Vector3(x, y, z));
+      }
+      scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), gridMat));
+    }
+    for (let lon = 0; lon < 360; lon += 15) {
+      const pts = [];
+      for (let lat = -90; lat <= 90; lat += 3) {
+        const [x, y, z] = latLonToXYZ(lat, lon - 180, 1.001);
+        pts.push(new THREE.Vector3(x, y, z));
+      }
+      scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), gridMat));
+    }
+
+    // Atmosphere glow
+    const atmGeo = new THREE.SphereGeometry(1.06, 32, 32);
+    const atmMat = new THREE.MeshPhongMaterial({
+      color: 0x0d4f8c, transparent: true, opacity: 0.08, side: THREE.BackSide,
+    });
+    scene.add(new THREE.Mesh(atmGeo, atmMat));
+
+    // Lights
+    scene.add(new THREE.AmbientLight(0x1a2a4a, 0.6));
+    const dirLight = new THREE.DirectionalLight(0x4488cc, 0.8);
+    dirLight.position.set(5, 3, 5);
+    scene.add(dirLight);
+
+    // Source pins
+    const pinMeshes = [];
+    const pinNodes  = [];
+
+    nodes.forEach((node, idx) => {
+      const country = node.country || "unknown";
+      const coords  = COUNTRY_COORDS[country];
+      if (!coords) return;
+
+      const [lat, lon] = coords;
+      // Jitter same-country nodes slightly
+      const jLat = lat + (Math.random() - 0.5) * 4;
+      const jLon = lon + (Math.random() - 0.5) * 4;
+      const [x, y, z] = latLonToXYZ(jLat, jLon, 1.015);
+
+      const cls   = node.class || "?";
+      const color = CLASS_COLOR[cls] || 0x94a3b8;
+      const size  = node.inverted ? 0.022 : 0.015 + (node.trust ?? 0) * 0.01;
+
+      const geo  = new THREE.SphereGeometry(size, 8, 8);
+      const mat  = new THREE.MeshBasicMaterial({ color });
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.position.set(x, y, z);
+      mesh.userData = { nodeIdx: idx };
+      globe.add(mesh);
+      pinMeshes.push(mesh);
+      pinNodes.push({ node, idx });
+
+      // Glow ring for Class D
+      if (node.inverted) {
+        const ringGeo = new THREE.RingGeometry(size * 1.8, size * 2.5, 16);
+        const ringMat = new THREE.MeshBasicMaterial({ color: 0xf43f5e, transparent: true, opacity: 0.4, side: THREE.DoubleSide });
+        const ring    = new THREE.Mesh(ringGeo, ringMat);
+        ring.position.set(x, y, z);
+        ring.lookAt(0, 0, 0);
+        globe.add(ring);
+      }
+    });
+
+    // Arc lines between Class D nodes
+    const dNodes = pinNodes.filter(p => p.node.inverted || p.node.class === "D");
+    if (dNodes.length >= 2) {
+      for (let i = 0; i < dNodes.length - 1; i++) {
+        for (let j = i + 1; j < dNodes.length; j++) {
+          const a = pinMeshes[pinNodes.indexOf(dNodes[i])];
+          const b = pinMeshes[pinNodes.indexOf(dNodes[j])];
+          if (!a || !b) continue;
+          const mid = new THREE.Vector3().addVectors(a.position, b.position).multiplyScalar(0.5);
+          mid.normalize().multiplyScalar(1.35);
+          const curve = new THREE.QuadraticBezierCurve3(a.position.clone(), mid, b.position.clone());
+          const pts   = curve.getPoints(30);
+          const arcMat = new THREE.LineBasicMaterial({ color: 0xf43f5e, transparent: true, opacity: 0.25 });
+          globe.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), arcMat));
+        }
+      }
+    }
+
+    // Raycaster for click
+    const raycaster = new THREE.Raycaster();
+    const mouse     = new THREE.Vector2();
+
+    const onClick = (e) => {
+      const rect = renderer.domElement.getBoundingClientRect();
+      mouse.x =  ((e.clientX - rect.left) / rect.width)  * 2 - 1;
+      mouse.y = -((e.clientY - rect.top)  / rect.height) * 2 + 1;
+      raycaster.setFromCamera(mouse, cam);
+      const hits = raycaster.intersectObjects(pinMeshes);
+      if (hits.length > 0) {
+        const idx = hits[0].object.userData.nodeIdx;
+        setSelected(nodes[idx]);
+      } else {
+        setSelected(null);
+      }
+    };
+
+    renderer.domElement.addEventListener("click", onClick);
+
+    // Drag
+    const onMouseDown = (e) => { isDragging.current = true; lastMouse.current = { x: e.clientX, y: e.clientY }; };
+    const onMouseMove = (e) => {
+      if (!isDragging.current) return;
+      const dx = e.clientX - lastMouse.current.x;
+      const dy = e.clientY - lastMouse.current.y;
+      rotVel.current.y = dx * 0.005;
+      rotVel.current.x = dy * 0.005;
+      lastMouse.current = { x: e.clientX, y: e.clientY };
+    };
+    const onMouseUp = () => { isDragging.current = false; };
+
+    renderer.domElement.addEventListener("mousedown", onMouseDown);
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+
+    // Animate
+    const animate = () => {
+      frameRef.current = requestAnimationFrame(animate);
+      if (!isDragging.current) {
+        globe.rotation.y += 0.0015; // auto-rotate
+        rotVel.current.x *= 0.92;
+        rotVel.current.y *= 0.92;
+      } else {
+        globe.rotation.y += rotVel.current.y;
+        globe.rotation.x += rotVel.current.x;
+        globe.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, globe.rotation.x));
+      }
+      renderer.render(scene, cam);
+    };
+    animate();
+
+    return () => {
+      cancelAnimationFrame(frameRef.current);
+      renderer.domElement.removeEventListener("click", onClick);
+      renderer.domElement.removeEventListener("mousedown", onMouseDown);
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+      if (mountRef.current && renderer.domElement.parentNode === mountRef.current) {
+        mountRef.current.removeChild(renderer.domElement);
+      }
+      renderer.dispose();
+    };
+  }, [nodes]);
+
+  const selCls   = selected?.class || "?";
+  const selColor = CLASS_HEX[selCls] || "#94a3b8";
+  const selDomain = selected ? (() => { try { return new URL(selected.url).hostname.replace("www.",""); } catch { return selected.url.slice(0,30); } })() : null;
+
+  return (
+    <div className="sticky top-6 space-y-2">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <span className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">
+          GEOINT // Source Distribution
+        </span>
+        <span className="text-[9px] text-slate-700">{nodes.length} nodes</span>
+      </div>
+
+      {/* Globe canvas */}
+      <div className="relative rounded-lg overflow-hidden border border-slate-800/60"
+           style={{ background: "radial-gradient(ellipse at center, #0a1628 0%, #020408 100%)" }}>
+        <div ref={mountRef} style={{ width: "100%", height: "320px" }} />
+
+        {/* Scan line overlay */}
+        <div className="absolute inset-0 pointer-events-none"
+             style={{ background: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px)" }} />
+
+        {/* Corner brackets — XCOM aesthetic */}
+        {["top-1 left-1", "top-1 right-1", "bottom-1 left-1", "bottom-1 right-1"].map((pos, i) => (
+          <div key={i} className={`absolute ${pos} w-4 h-4 pointer-events-none`}
+               style={{
+                 borderTop:    i < 2 ? "1px solid #1e4d7b" : "none",
+                 borderBottom: i >= 2 ? "1px solid #1e4d7b" : "none",
+                 borderLeft:   i % 2 === 0 ? "1px solid #1e4d7b" : "none",
+                 borderRight:  i % 2 === 1 ? "1px solid #1e4d7b" : "none",
+               }} />
+        ))}
+
+        {/* Drag hint */}
+        <div className="absolute bottom-2 left-0 right-0 text-center pointer-events-none">
+          <span className="text-[8px] text-slate-700 uppercase tracking-widest">drag to rotate · click pin to inspect</span>
+        </div>
+      </div>
+
+      {/* Selected node card */}
+      {selected ? (
+        <div className="border rounded p-3 space-y-2 transition-all"
+             style={{ borderColor: `${selColor}40`, background: `${selColor}08` }}>
+          <div className="flex items-center justify-between">
+            <span className="text-[9px] font-bold uppercase tracking-wider" style={{ color: selColor }}>
+              {selected.inverted ? "Class D — Propagation Node ⚠" : `Class ${selCls} Source`}
+            </span>
+            <button onClick={() => setSelected(null)} className="text-slate-600 hover:text-slate-400 text-[9px] cursor-pointer">✕</button>
+          </div>
+          <p className="text-[10px] text-slate-300 font-bold truncate">{selDomain}</p>
+          <div className="grid grid-cols-2 gap-1 text-[8px]">
+            {[
+              ["Trust",     (selected.trust ?? 0).toFixed(3)],
+              ["Snapshots", selected.snapshots ?? 0],
+              ["τ observed",selected.tau_days != null ? `${selected.tau_days}d` : "—"],
+              ["Country",   selected.country || "unknown"],
+              ["Scope",     selected.geo_scope || "unknown"],
+              ["First seen",selected.first_seen ? selected.first_seen.slice(0,10) : "—"],
+            ].map(([label, val]) => (
+              <div key={label} className="flex justify-between bg-slate-900/60 rounded px-1.5 py-1">
+                <span className="text-slate-600 uppercase">{label}</span>
+                <span className="text-slate-300 font-bold tabular-nums">{val}</span>
+              </div>
+            ))}
+          </div>
+          <a href={selected.url} target="_blank" rel="noopener noreferrer"
+             className="block text-center text-[8px] uppercase tracking-widest py-1 rounded border border-slate-700 text-slate-500 hover:text-teal-400 hover:border-teal-500/40 transition-colors">
+            Open source ↗
+          </a>
+        </div>
+      ) : (
+        <div className="space-y-1">
+          {/* Class legend */}
+          <div className="grid grid-cols-2 gap-1">
+            {[
+              { cls: "A", color: "#34d399", label: "Primary source" },
+              { cls: "B", color: "#38bdf8", label: "Credentialed" },
+              { cls: "C", color: "#fbbf24", label: "Volatile" },
+              { cls: "D", color: "#f43f5e", label: "Propagation ⚠" },
+            ].map(({ cls, color, label }) => (
+              <div key={cls} className="flex items-center gap-1.5 bg-slate-900/40 rounded px-2 py-1">
+                <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: color }} />
+                <span className="text-[8px] text-slate-500">{label}</span>
+              </div>
+            ))}
+          </div>
+          {/* Quick node list */}
+          <div className="max-h-40 overflow-y-auto space-y-0.5 pr-1">
+            {nodes.map((node, i) => {
+              const cc  = CLASS_HEX[node.class] || "#475569";
+              const dom = (() => { try { return new URL(node.url).hostname.replace("www.",""); } catch { return node.url.slice(0,22); } })();
+              return (
+                <div key={i} className="flex items-center gap-2 px-2 py-1 rounded hover:bg-slate-900/60 transition-colors cursor-default">
+                  <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: cc }} />
+                  <span className="text-[8px] text-slate-500 truncate flex-1">{dom}</span>
+                  <span className="text-[7px] text-slate-700">{node.country || "?"}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 export default function ILOAnalyzerConsole() {
@@ -733,7 +1077,7 @@ export default function ILOAnalyzerConsole() {
               CHRONODYNE SYSTEMS // ILO ANALYZER
             </h1>
             <p className="text-[11px] text-slate-500 mt-1">
-              v4.3.0 · Physics-grounded disinformation detection
+              v4.4.0 · Physics-grounded disinformation detection
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -1141,139 +1485,43 @@ export default function ILOAnalyzerConsole() {
           )}
         </section>
 
-        {/* Sources sidebar — xl only */}
+        {/* XCOM Globe — xl sidebar */}
         <section className="hidden xl:block xl:col-span-1">
           {verdict ? (
-            <div className="sticky top-6 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">
-                  Source Nodes ({verdict.source_nodes?.length ?? verdict.pi_diagnostics?.node_count ?? 0})
-                </span>
-                <button
-                  onClick={() => setShowSources(!showSources)}
-                  className="text-[9px] text-slate-600 hover:text-slate-400 cursor-pointer uppercase tracking-wider"
-                >
-                  {showSources ? "collapse" : "expand"}
-                </button>
-              </div>
-
-              {showSources && (
-                <div className="space-y-1 max-h-[80vh] overflow-y-auto pr-1">
-                  {(verdict.source_nodes ?? []).length > 0 ? (
-                    verdict.source_nodes.map((node, i) => {
-                      const cls = node.class || "?";
-                      const clsColor = {
-                        A: { border: "#34d39940", bg: "#34d39908", text: "#34d399", label: "A" },
-                        B: { border: "#38bdf840", bg: "#38bdf808", text: "#38bdf8", label: "B" },
-                        C: { border: "#fbbf2440", bg: "#fbbf2408", text: "#fbbf24", label: "C" },
-                        D: { border: "#f43f5e40", bg: "#f43f5e08", text: "#f43f5e", label: "D" },
-                      }[cls] || { border: "#47556940", bg: "#47556908", text: "#475569", label: "?" };
-
-                      const domain = (() => {
-                        try { return new URL(node.url).hostname.replace("www.", ""); }
-                        catch { return node.url.slice(0, 30); }
-                      })();
-
-                      const inverted = node.inverted;
-                      const trust = typeof node.trust === "number" ? node.trust.toFixed(2) : "—";
-                      const snaps = node.snapshots ?? 0;
-                      const tau   = node.tau_days != null ? `${node.tau_days}d` : null;
-
-                      return (
-                        <a
-                          key={i}
-                          href={node.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="block rounded border p-2 space-y-1 transition-opacity hover:opacity-80"
-                          style={{ borderColor: clsColor.border, background: clsColor.bg }}
-                        >
-                          <div className="flex items-center justify-between gap-1">
-                            <span className="text-[8px] font-bold px-1 rounded flex-shrink-0"
-                                  style={{ color: clsColor.text, border: `1px solid ${clsColor.border}` }}>
-                              {inverted ? "D⚠" : `Class ${clsColor.label}`}
-                            </span>
-                            <span className="text-[8px] text-slate-600 tabular-nums">T={trust}</span>
-                          </div>
-                          <p className="text-[9px] text-slate-400 truncate leading-tight">{domain}</p>
-                          {(snaps > 0 || tau) && (
-                            <div className="flex gap-2 text-[8px] text-slate-700">
-                              {snaps > 0 && <span>{snaps} snapshots</span>}
-                              {tau && <span>τ={tau}</span>}
-                            </div>
-                          )}
-                        </a>
-                      );
-                    })
-                  ) : (
-                    <div className="text-[9px] text-slate-700 text-center py-4">
-                      No node detail data.<br/>Add source_nodes to PPSVerdict.
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Class legend */}
-              <div className="border border-slate-800 rounded p-2 space-y-1">
-                <span className="text-[8px] uppercase tracking-widest text-slate-700">Source classes</span>
-                {[
-                  { cls: "A", color: "#34d399", label: "Primary — highest trust" },
-                  { cls: "B", color: "#38bdf8", label: "Credentialed media" },
-                  { cls: "C", color: "#fbbf24", label: "Volatile / captured" },
-                  { cls: "D", color: "#f43f5e", label: "Propagation node ⚠" },
-                ].map(({ cls, color, label }) => (
-                  <div key={cls} className="flex items-center gap-2">
-                    <span className="text-[8px] font-bold w-4 text-center" style={{ color }}>{cls}</span>
-                    <span className="text-[8px] text-slate-600">{label}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <GlobePanel nodes={verdict.source_nodes ?? []} />
           ) : (
-            <div className="border border-dashed border-slate-800/50 rounded p-4 text-center text-slate-700 text-[9px] uppercase tracking-widest">
-              Sources appear here after analysis
+            <div className="border border-dashed border-slate-800/50 rounded-lg h-64 flex items-center justify-center text-slate-700 text-[9px] uppercase tracking-widest">
+              Globe active after analysis
             </div>
           )}
         </section>
 
-        {/* Sources — mobile/lg: collapsible below results */}
-        {verdict && (
+        {/* Mobile/lg: collapsible source list below results */}
+        {verdict && (verdict.source_nodes ?? []).length > 0 && (
           <section className="xl:hidden lg:col-span-3">
             <div className="border border-slate-800 rounded p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">
-                  Source Nodes ({verdict.source_nodes?.length ?? verdict.pi_diagnostics?.node_count ?? 0})
+                  Source Nodes ({verdict.source_nodes?.length ?? 0})
                 </span>
-                <button
-                  onClick={() => setShowSources(!showSources)}
-                  className="text-[9px] text-slate-600 hover:text-slate-400 cursor-pointer uppercase tracking-wider"
-                >
+                <button onClick={() => setShowSources(!showSources)}
+                  className="text-[9px] text-slate-600 hover:text-slate-400 cursor-pointer uppercase tracking-wider">
                   {showSources ? "▲ collapse" : "▼ expand"}
                 </button>
               </div>
               {showSources && (
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                  {(verdict.source_nodes ?? []).map((node, i) => {
+                  {verdict.source_nodes.map((node, i) => {
                     const cls = node.class || "?";
-                    const clsColor = {
-                      A: { border: "#34d39940", bg: "#34d39908", text: "#34d399" },
-                      B: { border: "#38bdf840", bg: "#38bdf808", text: "#38bdf8" },
-                      C: { border: "#fbbf2440", bg: "#fbbf2408", text: "#fbbf24" },
-                      D: { border: "#f43f5e40", bg: "#f43f5e08", text: "#f43f5e" },
-                    }[cls] || { border: "#47556940", bg: "#47556908", text: "#475569" };
-                    const domain = (() => {
-                      try { return new URL(node.url).hostname.replace("www.", ""); }
-                      catch { return node.url.slice(0, 25); }
-                    })();
+                    const cc = { A:"#34d399",B:"#38bdf8",C:"#fbbf24",D:"#f43f5e" }[cls] || "#475569";
+                    const domain = (() => { try { return new URL(node.url).hostname.replace("www.",""); } catch { return node.url.slice(0,25); } })();
                     return (
                       <a key={i} href={node.url} target="_blank" rel="noopener noreferrer"
                          className="block rounded border p-2 space-y-1 hover:opacity-80 transition-opacity"
-                         style={{ borderColor: clsColor.border, background: clsColor.bg }}>
+                         style={{ borderColor: `${cc}40`, background: `${cc}08` }}>
                         <div className="flex items-center justify-between">
-                          <span className="text-[8px] font-bold" style={{ color: clsColor.text }}>
-                            {node.inverted ? "D ⚠" : `Class ${cls}`}
-                          </span>
-                          <span className="text-[8px] text-slate-600">T={(node.trust ?? 0).toFixed(2)}</span>
+                          <span className="text-[8px] font-bold" style={{ color: cc }}>{node.inverted ? "D ⚠" : `Class ${cls}`}</span>
+                          <span className="text-[8px] text-slate-600">T={(node.trust??0).toFixed(2)}</span>
                         </div>
                         <p className="text-[9px] text-slate-400 truncate">{domain}</p>
                       </a>
@@ -1289,7 +1537,7 @@ export default function ILOAnalyzerConsole() {
 
       <footer className="max-w-[1600px] mx-auto mt-8 pt-4 border-t border-slate-900 flex justify-between items-center flex-wrap gap-2">
         <span className="text-[9px] text-slate-700 uppercase tracking-widest">
-          ChronoDyne Systems · PPS · STOC · Π · Γ · v4.3.0
+          ChronoDyne Systems · PPS · STOC · Π · Γ · v4.4.0
         </span>
         <a href="https://doi.org/10.6084/m9.figshare.32307087" target="_blank" rel="noopener noreferrer"
            className="text-[9px] text-slate-700 hover:text-teal-400 uppercase tracking-widest transition-colors">
