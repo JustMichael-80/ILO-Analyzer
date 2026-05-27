@@ -764,7 +764,7 @@ export default function ILOAnalyzerConsole() {
                 value={claim}
                 onChange={(e) => setClaim(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter" && e.metaKey) executeAnalysis(); }}
-                placeholder="e.g. "The government is hiding evidence of UFOs in Nevada.""
+                placeholder={'e.g. "The government is hiding evidence of UFOs in Nevada."'}
                 className="w-full h-32 bg-slate-950 border border-slate-800 rounded p-3 text-sm text-slate-200 focus:outline-none focus:border-teal-500/60 transition-colors resize-none placeholder-slate-700"
                 disabled={loading}
               />
