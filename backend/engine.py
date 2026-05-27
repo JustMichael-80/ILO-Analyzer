@@ -387,6 +387,7 @@ async def execute_triage_sieve(request: AnalysisRequest):
         results = execute_search_cascade(request.claim, tavily)
 
         # ── Step 1.5: Claim classification + κ baseline ───────────────────────
+        loop = asyncio.get_event_loop()
         classification: ClaimClassification = await loop.run_in_executor(
             None,
             lambda: classify_claim(request.claim, gemini_key)
@@ -395,7 +396,6 @@ async def execute_triage_sieve(request: AnalysisRequest):
               f"κ={classification.kappa} confidence={classification.classifier_confidence:.0%}")
 
         # ── Step 2: Π computation (CDX parallel, timeout-safe) ────────────────
-        loop = asyncio.get_event_loop()
         pi_result: PiResult = await loop.run_in_executor(
             None,
             lambda: compute_pi(results, fetch_cdx=request.fetch_cdx)
