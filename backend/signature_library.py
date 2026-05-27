@@ -1,5 +1,5 @@
 """
-ChronoDyne Systems // ILO Analyzer v4.3
+ChronoDyne Systems // ILO Analyzer v4.5
 ILO Signature Library
 
 Cosine similarity matching of incoming Π/Γ physics vectors against a library
@@ -12,8 +12,19 @@ Architecture:
   - Threshold-gated match reporting avoids false positives on noisy queries
   - Signatures are versioned and traceable to benchmark claim IDs
 
+v4.5 additions:
+  SYN-008 through SYN-012 address the organic cultural persistence problem.
+  Evergreen conspiracy narratives produce high raw Π via subcultural
+  infrastructure — not coordinated artificial maintenance. These signatures
+  define the conspiracy-aware space and enable the κ-corrected Π_adj to
+  distinguish organic fringe communities from engineered operations.
+
+  The most critical new signature is SYN-010 (Astroturfed via Conspiracy
+  Fringe) — a state actor deliberately using existing conspiracy communities
+  as a laundering vector. Previously undetectable without κ correction.
+
 Physics vector dimensions:
-  dim 0  π              — Persistence Ratio (core temporal anomaly)
+  dim 0  π              — Persistence Ratio (core temporal anomaly, RAW)
   dim 1  γ              — Geographic Entropy Ratio (spatial diffusion anomaly)
   dim 2  S              — Shannon entropy of citation graph (source diversity)
   dim 3  E              — System complexity / trust-weighted node count
@@ -22,6 +33,12 @@ Physics vector dimensions:
   dim 6  class_a_ratio  — Class A nodes / total nodes (primary source presence)
   dim 7  saddle_encoded — Saddle-point classification as float:
                             organic=0.0, no_data=0.5, ilo_fade=0.8, maintained=1.0
+
+Note on raw Π in vectors:
+  Signature vectors use RAW Π (before κ correction). The matching system
+  compares raw physics vectors — κ adjustment is applied at interpretation
+  stage by baseline_adjuster.py. This preserves the ability to match
+  against known campaign fingerprints regardless of classification.
 
 Cosine similarity interpretation:
   sim ≥ 0.97  — Strong match (same campaign family, high confidence)
@@ -271,6 +288,145 @@ SIGNATURE_LIBRARY: list[ILOSignature] = [
             "with state media operation sustaining a narrative past its organic lifetime."
         ),
         notes="Synthetic archetype. Maintained saddle + international scope is key signal.",
+    ),
+
+    # ── v4.5 additions: Conspiracy-aware signatures ───────────────────────────
+    # These five signatures address the organic cultural persistence problem:
+    # evergreen conspiracy narratives produce high raw Π via subcultural
+    # infrastructure, not coordinated artificial maintenance. The κ-adjusted
+    # Π_adj is the operative signal for these classes — raw Π alone is
+    # insufficient and will over-flag genuine organic fringe communities.
+    #
+    # Key differentiator across all five:
+    #   Organic evergreen:            Π_adj ≈ 1.0,  Class D moderate, Class A present
+    #   Cyclically stirred:           Π_adj spikes periodically, Class D surges during windows
+    #   Astroturfed via fringe cover: Π_adj > 2.0, Γ anomalous, Class A laundered through B
+    #
+    # Vector format: [π, γ, S, E, inverted_signal, class_d_ratio, class_a_ratio, saddle]
+    # Note: π values here are RAW Π before κ correction. The matching system
+    # compares raw vectors — κ adjustment is applied at interpretation stage.
+
+    ILOSignature(
+        benchmark_id="SYN-008",
+        campaign_type="Organic Evergreen Conspiracy — Subcultural Persistence",
+        quadrant="II — Astroturfed Local",
+        vector=[85.0, 0.65, 1.45, 2.80, 1.20, 0.22, 0.18, 0.8],
+        description=(
+            "Very high raw Π with geographic containment (Γ < 0.70) — superficially "
+            "resembles Quadrant II astroturfing but is driven by organic subcultural "
+            "infrastructure: books, podcasts, dedicated researchers, and community forums. "
+            "Class A sourcing present (real historical documents exist and are cited). "
+            "Class D moderate but not dominant. Saddle: maintained appearance is artifact "
+            "of community curation, not bot infrastructure. κ correction resolves: "
+            "Π_adj ≈ 1.0 for Suppressed Tech/Energy class (κ ≈ 6.0). "
+            "Key differentiator from engineered ILO: Class A ≥ Class D, Γ organic, "
+            "no fast-injection velocity, no geographic anomaly."
+        ),
+        notes=(
+            "Synthetic archetype. TT Brown / Philadelphia Experiment cluster. "
+            "Raw Π alone will over-flag this — always apply κ correction before verdict. "
+            "Π_adj is the operative signal. Awaiting empirical benchmark validation."
+        ),
+    ),
+
+    ILOSignature(
+        benchmark_id="SYN-009",
+        campaign_type="Cyclically Stirred Narrative — Periodic Re-injection",
+        quadrant="II — Astroturfed Local",
+        vector=[45.0, 0.72, 1.30, 2.20, 2.40, 0.35, 0.12, 0.8],
+        description=(
+            "High raw Π with near-organic Γ. CDX snapshot curve shows periodic spikes "
+            "correlated with external events (election cycles, congressional hearings, "
+            "budget fights, anniversaries). Class D elevated during injection windows, "
+            "decays between them. Distinct from pure organic evergreen: the periodic "
+            "amplification is coordinated even if the underlying narrative is organic. "
+            "Cyclical signals in claim text (e.g. 'congressional hearing', 'whistleblower', "
+            "'declassified') are a strong positive indicator. "
+            "Treatment: flag cyclical maintenance rather than sustained artificial maintenance. "
+            "Distraction score should be computed against known political calendars."
+        ),
+        notes=(
+            "Synthetic archetype. UAP hearing cycles, election-timed conspiracy surges. "
+            "Awaiting empirical benchmark validation with CDX timestamp periodicity data. "
+            "Cyclical detection in pi_calculator.py (v4.5) will improve this signature."
+        ),
+    ),
+
+    ILOSignature(
+        benchmark_id="SYN-010",
+        campaign_type="Astroturfed via Conspiracy Fringe — ILO Using Organic Cover",
+        quadrant="I — Confirmed ILO",
+        vector=[120.0, 1.55, 1.20, 2.40, 3.60, 0.48, 0.04, 1.0],
+        description=(
+            "The most dangerous and previously undetectable pattern. Superficially "
+            "resembles organic evergreen conspiracy (high raw Π, moderate Class D), "
+            "but three signals distinguish it: (1) Γ > 1.40 — geographic injection "
+            "anomaly inconsistent with organic subcultural persistence which is "
+            "geographically contained; (2) Class A near-zero despite decades of "
+            "claimed research — organic fringe communities generate real primary "
+            "source archaeology over time; (3) Π_adj > 2.0 even after κ correction "
+            "for the conspiracy substrate class. A state actor or coordinated campaign "
+            "has deliberately seeded content into existing conspiracy communities to "
+            "exploit their organic persistence infrastructure as a laundering vector. "
+            "The fringe community provides plausible deniability and organic-looking "
+            "Class D amplification while the actual maintenance is artificial."
+        ),
+        notes=(
+            "Synthetic archetype. Critical signature — highest priority for human review. "
+            "Distinguishing feature vs SYN-008: Γ > 1.40 and Π_adj > 2.0 after κ. "
+            "Awaiting empirical benchmark validation. Legal review required before "
+            "attributing to specific actors."
+        ),
+    ),
+
+    ILOSignature(
+        benchmark_id="SYN-011",
+        campaign_type="Academic/Technical Fringe — Long Natural Half-Life",
+        quadrant="Organic",
+        vector=[200.0, 0.80, 1.65, 3.20, 0.40, 0.08, 0.42, 0.5],
+        description=(
+            "Extremely high raw Π with organic Γ and very high Class A ratio. "
+            "Story has deep citation structure in academic and technical literature. "
+            "Raw Π appears catastrophically anomalous but κ correction for "
+            "Academic/Technical Fringe class (κ ≈ 8.5) resolves to Π_adj ≈ 1.0. "
+            "This is what legitimate fringe science looks like: real papers, real "
+            "researchers, real institutional sourcing, organic geographic diffusion. "
+            "No artificial maintenance — the academic citation network itself "
+            "provides the persistence infrastructure. "
+            "Distinguishable from ILO by: Class A dominant, Class D minimal, "
+            "Γ organic, saddle showing organic decay (not maintained)."
+        ),
+        notes=(
+            "Synthetic archetype. Electrogravitics, cold fusion, alternative cosmology. "
+            "High Class A is the key signal — legitimate academic fringe generates "
+            "real primary source trails. Awaiting empirical benchmark validation."
+        ),
+    ),
+
+    ILOSignature(
+        benchmark_id="SYN-012",
+        campaign_type="Pop Culture Myth — Memetically Fit, No Coordination",
+        quadrant="Organic",
+        vector=[18.0, 1.10, 1.75, 3.40, 0.80, 0.16, 0.08, 0.0],
+        description=(
+            "Moderate-high raw Π with organic Γ and organic saddle. High source "
+            "diversity and system complexity — the narrative is widely discussed "
+            "across many independent domains. Class D present but not dominant. "
+            "No Class A (no institutional sourcing — it's a myth, not a documented "
+            "event). κ correction for Pop Culture/Celebrity class (κ ≈ 3.0) "
+            "resolves raw Π to Π_adj ≈ 1.0. Saddle: organic decay — the narrative "
+            "is fading naturally from its peak even if absolute persistence is high. "
+            "Mandela Effect, celebrity death hoaxes, and internet urban legends "
+            "cluster here. No coordination signal — pure memetic fitness drives "
+            "the persistence. High engagement on Class D nodes is expected and "
+            "not anomalous for this class."
+        ),
+        notes=(
+            "Synthetic archetype. Mandela Effect, Paul McCartney death hoax, "
+            "Avril Lavigne replacement theory cluster. "
+            "Key differentiator: organic saddle + organic Γ + zero Class A. "
+            "Awaiting empirical benchmark validation."
+        ),
     ),
 ]
 
