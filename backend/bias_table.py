@@ -193,6 +193,7 @@ BIAS_TABLE: dict[str, SourceRecord] = {
     "factcheck.org":      SourceRecord("factcheck.org",       NODE_CLASS_C, -0.15, 0.58, 0.22, "Institutional lean",              geo_scope="national",      country="US"),
     "politifact.com":     SourceRecord("politifact.com",      NODE_CLASS_C, -0.20, 0.55, 0.25, "Selection bias",                  geo_scope="national",      country="US"),
     "wikipedia.org":      SourceRecord("wikipedia.org",       NODE_CLASS_C,  0.0,  0.30, 0.40, "Open editing — pointer only",     geo_scope="global",        country="intl"),
+    "academia.edu":       SourceRecord("academia.edu",        NODE_CLASS_C,  0.0,  0.45, 0.30, "Unvetted self-upload — not peer reviewed", geo_scope="global", country="US"),
 
     # ── CLASS D: Propagation Nodes ────────────────────────────────────────────
     "facebook.com":       SourceRecord("facebook.com",        NODE_CLASS_D,  0.0,  0.05, 0.50, "Documented ILO vector",           geo_scope="global",        country="US"),
