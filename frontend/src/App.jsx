@@ -641,6 +641,7 @@ export default function ILOAnalyzerConsole() {
   const [report, setReport]             = useState(null);
   const [reportError, setReportError]   = useState(null);
   const [showTechLabels, setShowTechLabels] = useState(false);
+  const [showSources, setShowSources]   = useState(true);
   const phaseTimer                      = useRef(null);
 
   const generateReport = async () => {
@@ -750,7 +751,7 @@ export default function ILOAnalyzerConsole() {
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <main className="max-w-[1600px] mx-auto grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 gap-6">
 
         {/* Left: Input */}
         <section className="lg:col-span-1 space-y-4">
@@ -832,7 +833,7 @@ export default function ILOAnalyzerConsole() {
         </section>
 
         {/* Right: Results */}
-        <section className="lg:col-span-2">
+        <section className="lg:col-span-2 xl:col-span-2">
           {verdict ? (
             <div className="space-y-4">
 
@@ -1139,9 +1140,154 @@ export default function ILOAnalyzerConsole() {
             </div>
           )}
         </section>
+
+        {/* Sources sidebar — xl only */}
+        <section className="hidden xl:block xl:col-span-1">
+          {verdict ? (
+            <div className="sticky top-6 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">
+                  Source Nodes ({verdict.source_nodes?.length ?? verdict.pi_diagnostics?.node_count ?? 0})
+                </span>
+                <button
+                  onClick={() => setShowSources(!showSources)}
+                  className="text-[9px] text-slate-600 hover:text-slate-400 cursor-pointer uppercase tracking-wider"
+                >
+                  {showSources ? "collapse" : "expand"}
+                </button>
+              </div>
+
+              {showSources && (
+                <div className="space-y-1 max-h-[80vh] overflow-y-auto pr-1">
+                  {(verdict.source_nodes ?? []).length > 0 ? (
+                    verdict.source_nodes.map((node, i) => {
+                      const cls = node.class || "?";
+                      const clsColor = {
+                        A: { border: "#34d39940", bg: "#34d39908", text: "#34d399", label: "A" },
+                        B: { border: "#38bdf840", bg: "#38bdf808", text: "#38bdf8", label: "B" },
+                        C: { border: "#fbbf2440", bg: "#fbbf2408", text: "#fbbf24", label: "C" },
+                        D: { border: "#f43f5e40", bg: "#f43f5e08", text: "#f43f5e", label: "D" },
+                      }[cls] || { border: "#47556940", bg: "#47556908", text: "#475569", label: "?" };
+
+                      const domain = (() => {
+                        try { return new URL(node.url).hostname.replace("www.", ""); }
+                        catch { return node.url.slice(0, 30); }
+                      })();
+
+                      const inverted = node.inverted;
+                      const trust = typeof node.trust === "number" ? node.trust.toFixed(2) : "—";
+                      const snaps = node.snapshots ?? 0;
+                      const tau   = node.tau_days != null ? `${node.tau_days}d` : null;
+
+                      return (
+                        <a
+                          key={i}
+                          href={node.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block rounded border p-2 space-y-1 transition-opacity hover:opacity-80"
+                          style={{ borderColor: clsColor.border, background: clsColor.bg }}
+                        >
+                          <div className="flex items-center justify-between gap-1">
+                            <span className="text-[8px] font-bold px-1 rounded flex-shrink-0"
+                                  style={{ color: clsColor.text, border: `1px solid ${clsColor.border}` }}>
+                              {inverted ? "D⚠" : `Class ${clsColor.label}`}
+                            </span>
+                            <span className="text-[8px] text-slate-600 tabular-nums">T={trust}</span>
+                          </div>
+                          <p className="text-[9px] text-slate-400 truncate leading-tight">{domain}</p>
+                          {(snaps > 0 || tau) && (
+                            <div className="flex gap-2 text-[8px] text-slate-700">
+                              {snaps > 0 && <span>{snaps} snapshots</span>}
+                              {tau && <span>τ={tau}</span>}
+                            </div>
+                          )}
+                        </a>
+                      );
+                    })
+                  ) : (
+                    <div className="text-[9px] text-slate-700 text-center py-4">
+                      No node detail data.<br/>Add source_nodes to PPSVerdict.
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Class legend */}
+              <div className="border border-slate-800 rounded p-2 space-y-1">
+                <span className="text-[8px] uppercase tracking-widest text-slate-700">Source classes</span>
+                {[
+                  { cls: "A", color: "#34d399", label: "Primary — highest trust" },
+                  { cls: "B", color: "#38bdf8", label: "Credentialed media" },
+                  { cls: "C", color: "#fbbf24", label: "Volatile / captured" },
+                  { cls: "D", color: "#f43f5e", label: "Propagation node ⚠" },
+                ].map(({ cls, color, label }) => (
+                  <div key={cls} className="flex items-center gap-2">
+                    <span className="text-[8px] font-bold w-4 text-center" style={{ color }}>{cls}</span>
+                    <span className="text-[8px] text-slate-600">{label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="border border-dashed border-slate-800/50 rounded p-4 text-center text-slate-700 text-[9px] uppercase tracking-widest">
+              Sources appear here after analysis
+            </div>
+          )}
+        </section>
+
+        {/* Sources — mobile/lg: collapsible below results */}
+        {verdict && (
+          <section className="xl:hidden lg:col-span-3">
+            <div className="border border-slate-800 rounded p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">
+                  Source Nodes ({verdict.source_nodes?.length ?? verdict.pi_diagnostics?.node_count ?? 0})
+                </span>
+                <button
+                  onClick={() => setShowSources(!showSources)}
+                  className="text-[9px] text-slate-600 hover:text-slate-400 cursor-pointer uppercase tracking-wider"
+                >
+                  {showSources ? "▲ collapse" : "▼ expand"}
+                </button>
+              </div>
+              {showSources && (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                  {(verdict.source_nodes ?? []).map((node, i) => {
+                    const cls = node.class || "?";
+                    const clsColor = {
+                      A: { border: "#34d39940", bg: "#34d39908", text: "#34d399" },
+                      B: { border: "#38bdf840", bg: "#38bdf808", text: "#38bdf8" },
+                      C: { border: "#fbbf2440", bg: "#fbbf2408", text: "#fbbf24" },
+                      D: { border: "#f43f5e40", bg: "#f43f5e08", text: "#f43f5e" },
+                    }[cls] || { border: "#47556940", bg: "#47556908", text: "#475569" };
+                    const domain = (() => {
+                      try { return new URL(node.url).hostname.replace("www.", ""); }
+                      catch { return node.url.slice(0, 25); }
+                    })();
+                    return (
+                      <a key={i} href={node.url} target="_blank" rel="noopener noreferrer"
+                         className="block rounded border p-2 space-y-1 hover:opacity-80 transition-opacity"
+                         style={{ borderColor: clsColor.border, background: clsColor.bg }}>
+                        <div className="flex items-center justify-between">
+                          <span className="text-[8px] font-bold" style={{ color: clsColor.text }}>
+                            {node.inverted ? "D ⚠" : `Class ${cls}`}
+                          </span>
+                          <span className="text-[8px] text-slate-600">T={(node.trust ?? 0).toFixed(2)}</span>
+                        </div>
+                        <p className="text-[9px] text-slate-400 truncate">{domain}</p>
+                      </a>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+
       </main>
 
-      <footer className="max-w-6xl mx-auto mt-8 pt-4 border-t border-slate-900 flex justify-between items-center flex-wrap gap-2">
+      <footer className="max-w-[1600px] mx-auto mt-8 pt-4 border-t border-slate-900 flex justify-between items-center flex-wrap gap-2">
         <span className="text-[9px] text-slate-700 uppercase tracking-widest">
           ChronoDyne Systems · PPS · STOC · Π · Γ · v4.3.0
         </span>
