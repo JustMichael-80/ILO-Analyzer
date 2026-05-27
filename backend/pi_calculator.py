@@ -272,8 +272,8 @@ def compute_pi(search_results: list[dict], fetch_cdx: bool = True) -> PiResult:
             "snapshots":  n.snapshot_count,
             "country":    next((r.country   for f, r in BIAS_TABLE.items() if f in n.url), "unknown"),
             "geo_scope":  next((r.geo_scope for f, r in BIAS_TABLE.items() if f in n.url), "unknown"),
-            "first_seen": cdx_results.get(n.url, {}).get("first_seen") if cdx_results else None,
-            "last_seen":  cdx_results.get(n.url, {}).get("last_seen")  if cdx_results else None,
+            "first_seen": (cdx_results.get(n.url) or {}).get("first_seen") if cdx_results else None,
+            "last_seen":  (cdx_results.get(n.url) or {}).get("last_seen")  if cdx_results else None,
         }
         for n in nodes
     ]
