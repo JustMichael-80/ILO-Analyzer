@@ -111,7 +111,8 @@ def _fetch_open_meteo_accuracy() -> Optional[float]:
         lam = slope
         return round(lam, 6) if lam > 0 else None
 
-    except Exception:
+    except Exception as e:
+        print(f"[WeatherBaseline] open-meteo fetch failed: {e}")
         return None
 
 
@@ -132,6 +133,7 @@ def get_lambda_weather() -> dict:
         return cached
 
     lam = _fetch_open_meteo_accuracy()
+    print(f"[WeatherBaseline] open-meteo lambda fit: {lam}")
 
     if lam is not None:
         # Sanity check: atmospheric λ should sit in [0.05, 0.30]
