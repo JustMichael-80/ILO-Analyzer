@@ -244,6 +244,8 @@ def compute_pi(search_results: list[dict], fetch_cdx: bool = True) -> PiResult:
 
     # ── Saddle-point analysis via weather baseline ────────────────────────────
     # Use the lambda from the source with the most snapshots (richest curve)
+    cdx_nodes = [(n.url, n.snapshot_count, n.lambda_obs) for n in forward_nodes]
+    print(f"[Pi] CDX node summary: {cdx_nodes}")
     best_node = max(
         (n for n in forward_nodes if n.lambda_obs is not None),
         key=lambda n: n.snapshot_count,
