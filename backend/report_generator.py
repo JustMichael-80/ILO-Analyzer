@@ -82,7 +82,7 @@ def assemble_report(claim: str, verdict: dict) -> dict:
         "meta": {
             "claim":         claim,
             "generated_at":  now,
-            "engine_version": "4.2.0",
+            "engine_version": "4.4.0",
             "framework":     "ChronoDyne Systems // PPS · STOC · Π · Γ",
         },
         "verdict": {
