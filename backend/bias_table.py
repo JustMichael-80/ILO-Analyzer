@@ -175,6 +175,7 @@ BIAS_TABLE: dict[str, SourceRecord] = {
     "cato.org":           SourceRecord("cato.org",            NODE_CLASS_B,  0.35, 0.72, 0.18, "Libertarian think tank",          geo_scope="national",      country="US"),
     "aei.org":            SourceRecord("aei.org",             NODE_CLASS_B,  0.50, 0.68, 0.20, "Right think tank",                geo_scope="national",      country="US"),
     "cfr.org":            SourceRecord("cfr.org",             NODE_CLASS_B, -0.10, 0.80, 0.14, "Foreign policy establishment",    geo_scope="international", country="US"),
+    "governmentattic.org": SourceRecord("governmentattic.org", NODE_CLASS_B, 0.0, 0.72, 0.18, "FOIA aggregator — unofficial but primary docs", geo_scope="national", country="US"),
 
     # ── CLASS C: Volatile / Captured Outlets ──────────────────────────────────
     "foxnews.com":        SourceRecord("foxnews.com",         NODE_CLASS_C,  0.65, 0.50, 0.28, "High lean",                       geo_scope="national",      country="US"),
