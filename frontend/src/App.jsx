@@ -702,9 +702,14 @@ function GlobePanel({ nodes }) {
 
     // Globe
     const globeGeo  = new THREE.SphereGeometry(1, 64, 64);
-    const globeMat  = new THREE.MeshPhongMaterial({
-      color: 0x0a1628, emissive: 0x0d2137, specular: 0x1e3a5f,
-      shininess: 15, transparent: true, opacity: 0.97,
+    const loader   = new THREE.TextureLoader();
+    const earthTex = loader.load(
+      "https://unpkg.com/three-globe@2.31.1/example/img/earth-dark.jpg",
+      () => renderer.render(scene, cam)
+    );
+    const globeMat = new THREE.MeshPhongMaterial({
+      map: earthTex, specular: 0x1a3a5f, shininess: 8,
+      transparent: true, opacity: 0.97,
     });
     const globe = new THREE.Mesh(globeGeo, globeMat);
     globeRef.current = globe;
@@ -718,7 +723,7 @@ function GlobePanel({ nodes }) {
         const [x, y, z] = latLonToXYZ(lat, lon - 180, 1.001);
         pts.push(new THREE.Vector3(x, y, z));
       }
-      scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), gridMat));
+      globe.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), gridMat));
     }
     for (let lon = 0; lon < 360; lon += 15) {
       const pts = [];
@@ -726,13 +731,13 @@ function GlobePanel({ nodes }) {
         const [x, y, z] = latLonToXYZ(lat, lon - 180, 1.001);
         pts.push(new THREE.Vector3(x, y, z));
       }
-      scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), gridMat));
+      globe.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), gridMat));
     }
 
     // Atmosphere glow
     const atmGeo = new THREE.SphereGeometry(1.06, 32, 32);
     const atmMat = new THREE.MeshPhongMaterial({
-      color: 0x0d4f8c, transparent: true, opacity: 0.08, side: THREE.BackSide,
+      color: 0x1a6eb5, transparent: true, opacity: 0.12, side: THREE.BackSide,
     });
     scene.add(new THREE.Mesh(atmGeo, atmMat));
 
@@ -834,6 +839,11 @@ function GlobePanel({ nodes }) {
     renderer.domElement.addEventListener("mousedown", onMouseDown);
     window.addEventListener("mousemove", onMouseMove);
     window.addEventListener("mouseup", onMouseUp);
+    const onWheel = (e) => {
+      e.preventDefault();
+      cam.position.z = Math.max(1.8, Math.min(5.0, cam.position.z + e.deltaY * 0.003));
+    };
+    renderer.domElement.addEventListener("wheel", onWheel, { passive: false });
 
     // Animate
     const animate = () => {
@@ -857,6 +867,7 @@ function GlobePanel({ nodes }) {
       renderer.domElement.removeEventListener("mousedown", onMouseDown);
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("mouseup", onMouseUp);
+      renderer.domElement.removeEventListener("wheel", onWheel);
       if (mountRef.current && renderer.domElement.parentNode === mountRef.current) {
         mountRef.current.removeChild(renderer.domElement);
       }
