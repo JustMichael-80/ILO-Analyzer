@@ -269,8 +269,8 @@ def compute_pi(search_results: list[dict], fetch_cdx: bool = True) -> PiResult:
             "tau_days":   n.tau_days,
             "lambda_obs": round(n.lambda_obs, 6) if n.lambda_obs else None,
             "snapshots":  n.snapshot_count,
-            "country":    next((r.country   for fragment, r in __import__('bias_table').BIAS_TABLE.items() if fragment in n.url), "unknown"),
-            "geo_scope":  next((r.geo_scope for fragment, r in __import__('bias_table').BIAS_TABLE.items() if fragment in n.url), "unknown"),
+            "country":    next((r.country   for f, r in BIAS_TABLE.items() if f in n.url), "unknown"),
+            "geo_scope":  next((r.geo_scope for f, r in BIAS_TABLE.items() if f in n.url), "unknown"),
             "first_seen": cdx_results.get(n.url, {}).get("first_seen") if cdx_results else None,
             "last_seen":  cdx_results.get(n.url, {}).get("last_seen")  if cdx_results else None,
         }
