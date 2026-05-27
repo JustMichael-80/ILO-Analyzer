@@ -32,6 +32,7 @@ from typing import Optional
 from dataclasses import dataclass, field
 
 from bias_table import classify_domain, NODE_CLASS_D, NODE_CLASS_A
+from bias_table import BIAS_TABLE
 from cdx import fetch_snapshot_history, compute_snapshot_decay_lambda
 from weather_baseline import compute_deviation
 
