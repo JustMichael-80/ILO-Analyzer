@@ -12,7 +12,7 @@ Architecture:
   7. Gemini P4 Gate verdict synthesis (GeminiVerdict schema — no dict fields)
   8. Authoritative physics injection post-synthesis
 
-Version: 4.1.0
+Version: 4.4.0
 """
 
 import sys
@@ -53,7 +53,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="ChronoDyne Systems // ILO Analyzer Engine",
     description="Thermodynamic information triage via the Principle of Persistent Structurization",
-    version="4.1.0",
+    version="4.4.0",
     lifespan=lifespan,
 )
 
@@ -522,7 +522,7 @@ async def health_check():
     return {
         "status":    "online",
         "framework": "ChronoDyne P4 Gate",
-        "version":   "4.1.0",
+        "version":   "4.4.0",
         "cache":     cache.stats(),
     }
 
