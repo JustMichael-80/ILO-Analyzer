@@ -37,6 +37,9 @@ from bias_table import classify_domain, NODE_CLASS_D, NODE_CLASS_A, NODE_CLASS_B
 from pi_calculator import compute_pi, PiResult
 from gamma_calculator import compute_gamma, assign_quadrant, GammaResult
 from report_generator import generate_report
+from claim_classifier import classify_claim, ClaimClassification
+from baseline_adjuster import compute_adjusted_diagnostics, adjusted_diagnostics_to_dict
+from physical_baselines import compute_deviation_consensus
 from signature_library import match_against_library, LibraryResult
 
 
@@ -168,6 +171,7 @@ class PPSVerdict(BaseModel):
     gamma_diagnostics:               GammaDiagnostics
     signature_result:                Optional[dict] = None
     source_nodes:                    Optional[List[dict]] = None
+    adjusted_diagnostics:            Optional[dict] = None
 
 
 # ── System prompt ─────────────────────────────────────────────────────────────
@@ -228,6 +232,16 @@ Other rules:
 - inverted_signal > 2.0: flag Class D amplification as anomalous pattern
 - class_a_count = 0:     local_credibility -> 'Threshold Not Met'
 - class_d_count > class_a_count + class_b_count: strong ILO distribution signature
+
+κ correction rules:
+- pi_adjusted is Π corrected for cultural substrate class — use this as primary signal
+- If ilo_survives_correction = True: artificial maintenance survives κ — strong ILO weight
+- If ilo_survives_correction = False and pi_raw high: organic cultural persistence — reduce ILO weight
+- claim_class informs wildness_tier: 'Suppressed Tech/Energy' → Tier 3-4 baseline
+- memetic_fitness > 0.6 with organic Π_adj → corroborate 'Organic Conspiracy' signal_pattern
+- evergreen_archetype present → note in verdict_summary as historical context
+- adjusted_verdict_weight contains full interpretive guidance — incorporate into pps_justification
+- lambda_consensus is multi-substrate physical reference — more reliable than single weather baseline
 
 SUPPRESSION LOGIC: Π very low + no debunking trail = weight toward 'Possible Suppression'.
 
@@ -372,6 +386,14 @@ async def execute_triage_sieve(request: AnalysisRequest):
         # ── Step 1: Search cascade ────────────────────────────────────────────
         results = execute_search_cascade(request.claim, tavily)
 
+        # ── Step 1.5: Claim classification + κ baseline ───────────────────────
+        classification: ClaimClassification = await loop.run_in_executor(
+            None,
+            lambda: classify_claim(request.claim, gemini_key)
+        )
+        print(f"[ClaimClassifier] Class: {classification.claim_class_label} "
+              f"κ={classification.kappa} confidence={classification.classifier_confidence:.0%}")
+
         # ── Step 2: Π computation (CDX parallel, timeout-safe) ────────────────
         loop = asyncio.get_event_loop()
         pi_result: PiResult = await loop.run_in_executor(
@@ -386,6 +408,17 @@ async def execute_triage_sieve(request: AnalysisRequest):
         )
         quadrant = assign_quadrant(pi_result.pi, gamma_result.gamma)
         gamma_result.quadrant = quadrant
+
+        # ── Step 3.5: Adjusted diagnostics (κ + consensus baseline) ──────────
+        adj_diagnostics = compute_adjusted_diagnostics(
+            pi_result=pi_result,
+            classification=classification,
+        )
+        print(f"[BaselineAdjuster] Π_raw={pi_result.pi:.4f} "
+              f"Π_adj={adj_diagnostics.pi_adjusted:.4f} "
+              f"κ={adj_diagnostics.kappa:.2f} "
+              f"λ_consensus={adj_diagnostics.lambda_consensus:.6f} "
+              f"({adj_diagnostics.consensus_quality})")
 
         # ── Step 4: Signature library scan ───────────────────────────────────────
         library_result = match_against_library(pi_result, gamma_result)
@@ -414,6 +447,15 @@ async def execute_triage_sieve(request: AnalysisRequest):
             "diffusion_velocity":gamma_result.diffusion_velocity,
             "quadrant":          quadrant,
             "gamma_interpretation":gamma_result.gamma_interpretation,
+            "pi_adjusted":          adj_diagnostics.pi_adjusted,
+            "kappa":                adj_diagnostics.kappa,
+            "claim_class":          adj_diagnostics.claim_class_label,
+            "memetic_fitness":      adj_diagnostics.memetic_fitness,
+            "evergreen_archetype":  adj_diagnostics.evergreen_archetype,
+            "ilo_survives_correction": adj_diagnostics.ilo_survives_correction,
+            "adjusted_verdict_weight": adj_diagnostics.adjusted_verdict_weight,
+            "lambda_consensus":     adj_diagnostics.lambda_consensus,
+            "consensus_quality":    adj_diagnostics.consensus_quality,
         }
 
         user_prompt = f"""Claim under analysis: "{request.claim}"
@@ -507,6 +549,7 @@ Do not include conversational markup or preamble."""
             } if library_result.best_match else None,
         }
         raw["source_nodes"]      = pi_result.node_details
+        raw["adjusted_diagnostics"] = adjusted_diagnostics_to_dict(adj_diagnostics)
         return PPSVerdict(**raw)
 
     except json.JSONDecodeError as e:
