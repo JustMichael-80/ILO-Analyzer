@@ -133,12 +133,9 @@ def get_lambda_weather() -> dict:
         return cached
 
     lam = _fetch_open_meteo_accuracy()
-    print(f"[WeatherBaseline] open-meteo lambda fit: {lam}")
+        print(f"[WeatherBaseline] open-meteo lambda fit: {lam}")
 
-    if lam is not None:
-        # Sanity check: atmospheric λ should sit in [0.05, 0.30]
-        # Outside this range something went wrong with the fit
-        if 0.05 <= lam <= 0.30:
+        if lam is not None and 0.05 <= lam <= 0.30:
             result = {
                 "lambda": lam,
                 "source": "open-meteo",
@@ -149,18 +146,10 @@ def get_lambda_weather() -> dict:
                 "lambda": LAMBDA_FALLBACK,
                 "source": "noaa_fallback",
                 "cached": False,
-                "note":   f"open-meteo fit λ={lam:.4f} outside plausible range — using fallback",
             }
-    else:
-        result = {
-            "lambda": LAMBDA_FALLBACK,
-            "source": "noaa_fallback",
-            "cached": False,
-        }
 
-    cache.set("weather", "lambda_weather", result)
-    return result
-
+        cache.set("weather", "lambda_weather", result)
+        return result
 
 def compute_deviation(lambda_observed: Optional[float]) -> dict:
     """
