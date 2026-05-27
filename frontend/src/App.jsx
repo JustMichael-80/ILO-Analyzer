@@ -702,14 +702,9 @@ function GlobePanel({ nodes }) {
 
     // Globe
     const globeGeo  = new THREE.SphereGeometry(1, 64, 64);
-    const loader   = new THREE.TextureLoader();
-    const earthTex = loader.load(
-      "https://unpkg.com/three-globe@2.31.1/example/img/earth-dark.jpg",
-      () => renderer.render(scene, cam)
-    );
-    const globeMat = new THREE.MeshPhongMaterial({
-      map: earthTex, specular: 0x1a3a5f, shininess: 8,
-      transparent: true, opacity: 0.97,
+    const globeMat  = new THREE.MeshPhongMaterial({
+      color: 0x0a1628, emissive: 0x0d2137, specular: 0x1e3a5f,
+      shininess: 15, transparent: true, opacity: 0.97,
     });
     const globe = new THREE.Mesh(globeGeo, globeMat);
     globeRef.current = globe;
@@ -723,7 +718,7 @@ function GlobePanel({ nodes }) {
         const [x, y, z] = latLonToXYZ(lat, lon - 180, 1.001);
         pts.push(new THREE.Vector3(x, y, z));
       }
-      globe.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), gridMat));
+      scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), gridMat));
     }
     for (let lon = 0; lon < 360; lon += 15) {
       const pts = [];
@@ -731,13 +726,13 @@ function GlobePanel({ nodes }) {
         const [x, y, z] = latLonToXYZ(lat, lon - 180, 1.001);
         pts.push(new THREE.Vector3(x, y, z));
       }
-      globe.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), gridMat));
+      scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), gridMat));
     }
 
     // Atmosphere glow
     const atmGeo = new THREE.SphereGeometry(1.06, 32, 32);
     const atmMat = new THREE.MeshPhongMaterial({
-      color: 0x1a6eb5, transparent: true, opacity: 0.12, side: THREE.BackSide,
+      color: 0x0d4f8c, transparent: true, opacity: 0.08, side: THREE.BackSide,
     });
     scene.add(new THREE.Mesh(atmGeo, atmMat));
 
@@ -839,11 +834,6 @@ function GlobePanel({ nodes }) {
     renderer.domElement.addEventListener("mousedown", onMouseDown);
     window.addEventListener("mousemove", onMouseMove);
     window.addEventListener("mouseup", onMouseUp);
-    const onWheel = (e) => {
-      e.preventDefault();
-      cam.position.z = Math.max(1.8, Math.min(5.0, cam.position.z + e.deltaY * 0.003));
-    };
-    renderer.domElement.addEventListener("wheel", onWheel, { passive: false });
 
     // Animate
     const animate = () => {
@@ -867,7 +857,6 @@ function GlobePanel({ nodes }) {
       renderer.domElement.removeEventListener("mousedown", onMouseDown);
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("mouseup", onMouseUp);
-      renderer.domElement.removeEventListener("wheel", onWheel);
       if (mountRef.current && renderer.domElement.parentNode === mountRef.current) {
         mountRef.current.removeChild(renderer.domElement);
       }
@@ -1088,7 +1077,7 @@ export default function ILOAnalyzerConsole() {
               CHRONODYNE SYSTEMS // ILO ANALYZER
             </h1>
             <p className="text-[11px] text-slate-500 mt-1">
-              v4.4.0 · Physics-grounded disinformation detection
+              v4.5.0 · Physics-grounded disinformation detection
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -1546,18 +1535,32 @@ export default function ILOAnalyzerConsole() {
 
       </main>
 
-      <footer className="max-w-[1600px] mx-auto mt-8 pt-4 border-t border-slate-900 flex justify-between items-center flex-wrap gap-2">
-        <span className="text-[9px] text-slate-700 uppercase tracking-widest">
-          ChronoDyne Systems · PPS · STOC · Π · Γ · v4.4.0
-        </span>
-        <a href="https://doi.org/10.6084/m9.figshare.32307087" target="_blank" rel="noopener noreferrer"
-           className="text-[9px] text-slate-700 hover:text-teal-400 uppercase tracking-widest transition-colors">
-          PPS Paper ↗
-        </a>
-        <a href="https://github.com/JustMichael-80/ILO-Analyzer" target="_blank" rel="noopener noreferrer"
-           className="text-[9px] text-slate-600 hover:text-teal-400 uppercase tracking-widest transition-colors">
-          GitHub ↗
-        </a>
+      <footer className="max-w-[1600px] mx-auto mt-8 pt-4 border-t border-slate-900 flex justify-between items-center flex-wrap gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
+          <a href="https://x.com/ChronoDyneSys" target="_blank" rel="noopener noreferrer"
+             className="text-[9px] text-slate-600 hover:text-teal-400 uppercase tracking-widest transition-colors font-bold">
+            ChronoDyne Systems ↗
+          </a>
+          <span className="text-slate-800 text-[9px]">·</span>
+          <a href="https://www.linkedin.com/company/chronodyne-systems-inc/" target="_blank" rel="noopener noreferrer"
+             className="text-[9px] text-slate-600 hover:text-teal-400 uppercase tracking-widest transition-colors">
+            LinkedIn ↗
+          </a>
+          <span className="text-slate-800 text-[9px]">·</span>
+          <span className="text-[9px] text-slate-800 uppercase tracking-widest">
+            PPS · STOC · Π · Γ · v4.5.0
+          </span>
+        </div>
+        <div className="flex items-center gap-3 flex-wrap">
+          <a href="https://doi.org/10.6084/m9.figshare.32307087" target="_blank" rel="noopener noreferrer"
+             className="text-[9px] text-slate-700 hover:text-teal-400 uppercase tracking-widest transition-colors">
+            PPS Paper ↗
+          </a>
+          <a href="https://github.com/JustMichael-80/ILO-Analyzer" target="_blank" rel="noopener noreferrer"
+             className="text-[9px] text-slate-600 hover:text-teal-400 uppercase tracking-widest transition-colors">
+            GitHub ↗
+          </a>
+        </div>
       </footer>
     </div>
   );
