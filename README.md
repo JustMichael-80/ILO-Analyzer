@@ -2,6 +2,8 @@
 
 An automated, cloud-isolated information triage engine built to identify and map **Information Laundering Operations (ILOs)** — coordinated campaigns to manufacture, amplify, or suppress narratives. This architecture bypasses surface-level text classification by measuring the **thermodynamic footprint of data propagation** directly — computing whether a narrative is persisting naturally or being artificially sustained against entropic decay, across both temporal and geographic dimensions simultaneously.
 
+Tl;dr: ILO Analyzer detects manufactured narratives by measuring their thermodynamic footprint — not their content. No NLP. No sentiment. No bullshit. Just pure physics, fresh from the mountain stream.
+
 ---
 
 ## Theoretical Framework: The Principle of Persistent Structurization (PPS)
